@@ -1,3 +1,5 @@
+@AGENTS.md
+
 # CLAUDE.md — YuSure
 
 Istruzioni specifiche di questo progetto. Le regole generali (collaborazione, approvazioni, standard, workflow) arrivano dal Personal AI Brain caricato a livello utente: qui c'è solo ciò che vale per questo repository.
