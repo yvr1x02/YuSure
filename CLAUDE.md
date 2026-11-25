@@ -24,4 +24,13 @@ Specifica: [docs/SPEC.md](docs/SPEC.md). Piano a milestone: [docs/MILESTONES.md]
 
 ## Comandi
 
-Da compilare in M0.
+Node 22.12 o successivo. Le variabili d'ambiente stanno in `.env.local` (modello in `.env.example`).
+
+| Comando | Cosa fa |
+|---|---|
+| `npm run dev` | server di sviluppo su `localhost:3000` |
+| `npm run build` | build di produzione |
+| `npm run lint` | ESLint |
+| `npm run typecheck` | genera i tipi delle route e controlla TypeScript |
+| `npm test` | test unitari con Vitest (`src/**/*.test.ts`) |
+| `npm run test:e2e` | build, avvio sulla porta 3100 e test Playwright con axe (`e2e/`); la prima volta serve `npx playwright install chromium` |
