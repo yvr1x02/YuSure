@@ -16,7 +16,6 @@ const italianDate = new Intl.DateTimeFormat("it-IT", {
 export function evaluateCertificate(
   result: CertificateInfo | SafeRequestError,
   now: Date,
-  deadlineReached: boolean,
 ): [CheckResult, CheckResult] {
   if (result instanceof SafeRequestError) {
     // Port 443 closed is already the https check's problem: counted once.
@@ -27,7 +26,7 @@ export function evaluateCertificate(
         { id: "certificateExpiry", outcome: "unverified", reason: "no_https", found },
       ];
     }
-    return [unverified("certificateValid", result, deadlineReached), unverified("certificateExpiry", result, deadlineReached)];
+    return [unverified("certificateValid", result), unverified("certificateExpiry", result)];
   }
 
   const found = [

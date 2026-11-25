@@ -282,7 +282,7 @@ describe("timeouts", () => {
       (e: unknown) => e,
     );
     expect(error).toBeInstanceOf(SafeRequestError);
-    expect(error).toMatchObject({ code: "timeout", message: "scan deadline reached" });
+    expect(error).toMatchObject({ code: "scan_deadline" });
   });
 });
 

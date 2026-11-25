@@ -6,6 +6,7 @@ export type SafeRequestErrorCode =
   | "connection_refused"
   | "connection_failed"
   | "timeout"
+  | "scan_deadline"
   | "too_large"
   | "too_many_redirects"
   | "tls_error"

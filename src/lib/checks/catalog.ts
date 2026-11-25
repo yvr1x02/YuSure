@@ -120,7 +120,7 @@ export const OUTCOME_LABELS: Record<Outcome, string> = {
   unverified: "Non verificato",
 };
 
-export type ReasonCode = SafeRequestErrorCode | "scan_deadline" | "no_https" | "certificate_expired";
+export type ReasonCode = SafeRequestErrorCode | "no_https" | "certificate_expired";
 
 /** Shown in the form when the scan cannot start, and as the reason of "non verificato". */
 export const ERROR_MESSAGES: Record<ReasonCode | "empty_address", string> = {

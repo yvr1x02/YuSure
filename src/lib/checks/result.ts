@@ -13,9 +13,8 @@ export type CheckResult = {
   found: string[];
 };
 
-export function unverified(id: CheckId, error: SafeRequestError, deadlineReached: boolean): CheckResult {
-  const reason = error.code === "timeout" && deadlineReached ? "scan_deadline" : error.code;
-  return { id, outcome: "unverified", reason, found: [`${error.code}: ${error.message}`] };
+export function unverified(id: CheckId, error: SafeRequestError): CheckResult {
+  return { id, outcome: "unverified", reason: error.code, found: [`${error.code}: ${error.message}`] };
 }
 
 /** Lets an expected failure through as a value; anything else is a bug and keeps throwing. */

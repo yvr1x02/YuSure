@@ -19,31 +19,31 @@ const fail = (code: SafeRequestError["code"], message = "test") => new SafeReque
 
 describe("evaluateHttps", () => {
   it("is ok when https answers", () => {
-    expect(evaluateHttps(response("https://esempio.it/"), false)).toMatchObject({ id: "https", outcome: "ok" });
+    expect(evaluateHttps(response("https://esempio.it/"))).toMatchObject({ id: "https", outcome: "ok" });
   });
 
   it.each(["tls_error", "too_large", "bad_response"] as const)(
     "is ok when https answered but the request stopped with %s",
     (code) => {
-      expect(evaluateHttps(fail(code), false).outcome).toBe("ok");
+      expect(evaluateHttps(fail(code)).outcome).toBe("ok");
     },
   );
 
   it("is a problem when https redirects to http", () => {
-    const result = evaluateHttps(response("http://esempio.it/", 200, {}, ["https://esempio.it/"]), false);
+    const result = evaluateHttps(response("http://esempio.it/", 200, {}, ["https://esempio.it/"]));
     expect(result).toMatchObject({ outcome: "problem", found: ["https://esempio.it/ → http://esempio.it/ (200)"] });
   });
 
   it("is a problem when port 443 refuses the connection", () => {
-    expect(evaluateHttps(fail("connection_refused"), false).outcome).toBe("problem");
+    expect(evaluateHttps(fail("connection_refused")).outcome).toBe("problem");
   });
 
   it("is unverified on a timeout, with the reason", () => {
-    expect(evaluateHttps(fail("timeout"), false)).toMatchObject({ outcome: "unverified", reason: "timeout" });
+    expect(evaluateHttps(fail("timeout"))).toMatchObject({ outcome: "unverified", reason: "timeout" });
   });
 
   it("says when the scan deadline stopped it", () => {
-    expect(evaluateHttps(fail("timeout"), true)).toMatchObject({ outcome: "unverified", reason: "scan_deadline" });
+    expect(evaluateHttps(fail("scan_deadline"))).toMatchObject({ outcome: "unverified", reason: "scan_deadline" });
   });
 });
 
@@ -108,7 +108,7 @@ describe("evaluateHttpRedirect", () => {
   const hop = (url: string, status: number, location?: string) => ({ url, status, location });
 
   it.each([301, 302, 307, 308])("is ok when a %i leads to https", (status) => {
-    const result = evaluateHttpRedirect({ hops: [hop("http://esempio.it/", status, "https://esempio.it/")] }, false);
+    const result = evaluateHttpRedirect({ hops: [hop("http://esempio.it/", status, "https://esempio.it/")] });
     expect(result).toMatchObject({ id: "httpRedirect", outcome: "ok", found: [`http://esempio.it/ → ${status} → https://esempio.it/`] });
   });
 
@@ -116,26 +116,26 @@ describe("evaluateHttpRedirect", () => {
     const trace = {
       hops: [hop("http://esempio.it/", 301, "http://www.esempio.it/"), hop("http://www.esempio.it/", 301, "https://www.esempio.it/")],
     };
-    expect(evaluateHttpRedirect(trace, false).outcome).toBe("ok");
+    expect(evaluateHttpRedirect(trace).outcome).toBe("ok");
   });
 
   it("is a warning when port 80 refuses the connection", () => {
-    expect(evaluateHttpRedirect({ hops: [], error: fail("connection_refused") }, false).outcome).toBe("warning");
+    expect(evaluateHttpRedirect({ hops: [], error: fail("connection_refused") }).outcome).toBe("warning");
   });
 
   it("is a problem when http serves the page", () => {
-    expect(evaluateHttpRedirect({ hops: [hop("http://esempio.it/", 200)] }, false).outcome).toBe("problem");
+    expect(evaluateHttpRedirect({ hops: [hop("http://esempio.it/", 200)] }).outcome).toBe("problem");
   });
 
   it("is a problem when the chain ends on http", () => {
     const trace = { hops: [hop("http://esempio.it/", 301, "http://www.esempio.it/"), hop("http://www.esempio.it/", 200)] };
-    expect(evaluateHttpRedirect(trace, false).outcome).toBe("problem");
+    expect(evaluateHttpRedirect(trace).outcome).toBe("problem");
   });
 
   it.each(["timeout", "too_many_redirects", "not_public", "connection_failed"] as const)(
     "is unverified on %s, with the reason and the hops read",
     (code) => {
-      const result = evaluateHttpRedirect({ hops: [hop("http://esempio.it/", 301, "http://altro.it/")], error: fail(code) }, false);
+      const result = evaluateHttpRedirect({ hops: [hop("http://esempio.it/", 301, "http://altro.it/")], error: fail(code) });
       expect(result).toMatchObject({ outcome: "unverified", reason: code });
       expect(result.found).toHaveLength(2);
     },
@@ -143,6 +143,6 @@ describe("evaluateHttpRedirect", () => {
 
   it("is unverified, not a warning, when a later hop refuses the connection", () => {
     const trace = { hops: [hop("http://esempio.it/", 301, "http://www.esempio.it/")], error: fail("connection_refused") };
-    expect(evaluateHttpRedirect(trace, false).outcome).toBe("unverified");
+    expect(evaluateHttpRedirect(trace).outcome).toBe("unverified");
   });
 });

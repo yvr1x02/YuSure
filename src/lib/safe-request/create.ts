@@ -40,7 +40,7 @@ export type SafeResponse = {
 export type SafeRequestOptions = {
   /** false returns a 3xx as it is: the HTTP-to-HTTPS check reads it hop by hop. */
   followRedirects?: boolean;
-  /** Aborts with "timeout" too: the scan-wide deadline. */
+  /** The scan-wide deadline: aborting it ends with "scan_deadline". */
   signal?: AbortSignal;
 };
 
@@ -169,7 +169,7 @@ export function createSafeRequest(deps: SafeRequestDeps) {
 
   function classify(error: unknown, scanSignal: AbortSignal | undefined, timeout: AbortSignal) {
     if (error instanceof SafeRequestError) return error;
-    if (scanSignal?.aborted) return new SafeRequestError("timeout", "scan deadline reached");
+    if (scanSignal?.aborted) return new SafeRequestError("scan_deadline", "scan deadline reached");
     if (timeout.aborted) return new SafeRequestError("timeout", `no complete response in ${deps.timeoutMs} ms`);
     const code = (error as NodeJS.ErrnoException).code ?? "";
     if (code === "ECONNREFUSED") return new SafeRequestError("connection_refused", code);
