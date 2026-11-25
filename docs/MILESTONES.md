@@ -19,6 +19,9 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Verifiche di ADR-0003: `after()` su Vercel e durata massima delle funzioni.
 - Comandi compilati nel `CLAUDE.md`.
 
+**Da verificare dopo il merge di M0:**
+- L'indirizzo di produzione è pubblico, raggiungibile senza accesso a Vercel. Le anteprime protette vanno bene, la produzione no.
+
 ## M1 — Richieste sicure e primi controlli
 
 - Modulo di richiesta sicura (ADR-0002), con tutti i test dei casi difficili.
