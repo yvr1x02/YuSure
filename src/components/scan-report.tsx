@@ -50,7 +50,7 @@ function ResultItem({ result }: { result: CheckResult }) {
 
   return (
     <li className="flex flex-col gap-2 border-t border-edge-subtle py-4 sm:flex-row sm:gap-6">
-      <p className={`flex shrink-0 items-center gap-2 font-medium sm:w-40 ${style.className}`}>
+      <p className={`flex shrink-0 items-center gap-2 self-start font-medium sm:w-40 ${style.className}`}>
         <span
           aria-hidden="true"
           className="inline-flex size-6 items-center justify-center rounded-full border border-current text-sm"
