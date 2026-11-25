@@ -36,9 +36,11 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 
 ## M3 — Salvataggio, link e limiti
 
-- Driver Postgres (ADR-0001) e tabelle `scans` e `scan_requests` con migrazioni (ADR-0003).
+- Driver Postgres approvato: `pg`, `@types/pg` e `@vercel/functions` (ADR-0001), con una prova sui tempi di avvio a freddo prima della scelta definitiva.
+- Tabelle `scans` e `scan_requests` con migrazioni (ADR-0003).
 - Pagina `/report/[id]`, "Copia link", cache di 24 ore e "Rifai la scansione".
-- Limite per IP e tetto globale, IP come hash con sale, cancellazione dopo 24 ore con il cron giornaliero.
+- Limite per IP e tetto globale, IP come hash con sale.
+- Cancellazione degli hash scaduti a ogni scansione, più il cron giornaliero come rete di sicurezza: cancellazione entro 48 ore (ADR-0003).
 
 ## M4 — SEO e accessibilità dall'HTML
 

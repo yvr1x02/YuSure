@@ -51,7 +51,8 @@ Se lo stesso dominio è stato scansionato nelle ultime 24 ore, si apre quel repo
 ### IP e privacy
 
 - L'IP si salva solo come **hash con sale** (HMAC con un segreto del server) nella tabella dei limiti, mai nella tabella dei report.
-- Le righe dei limiti più vecchie di 24 ore le cancella un **cron giornaliero** di Vercel, protetto con `CRON_SECRET`.
+- Le righe dei limiti scadute si cancellano **a ogni scansione**; un **cron giornaliero** di Vercel, protetto con `CRON_SECRET`, fa da rete di sicurezza quando non arrivano scansioni.
+- Promessa pubblica (pagina "Come funziona"): l'hash dell'IP **si cancella entro 48 ore**.
 - Nessun cookie di profilazione, nessuna analytics che salvi dati personali.
 
 ## Alternative considerate
@@ -91,4 +92,4 @@ Lette il 2026-11-25, prima di creare qualsiasi risorsa. Sono condizioni di servi
 ### Vercel, cron sul piano Hobby
 
 - Una volta al giorno al massimo, con precisione di un'ora (±59 minuti), in UTC, solo sui deploy di produzione; nessun nuovo tentativo se fallisce. L'endpoint si protegge con `CRON_SECRET`, inviato da Vercel nell'header `Authorization: Bearer …`. I cron sono indicati come funzione "legacy" che verrà migrata a Schedules. Fonti: [Cron Jobs](https://vercel.com/docs/cron-jobs), aggiornata il 2026-09-16; [uso e prezzi](https://vercel.com/docs/cron-jobs/usage-and-pricing), aggiornata il 2026-07-15; [gestione](https://vercel.com/docs/cron-jobs/manage-cron-jobs), aggiornata il 2026-08-11.
-- **Conseguenza:** con un solo passaggio al giorno una riga dei limiti può restare fino a circa 49 ore (24 ore più un giorno di attesa più l'ora di tolleranza). Da risolvere in M3: o la cancellazione avviene anche a ogni scansione, o il testo di "Come funziona" promette un tempo coerente.
+- **Conseguenza:** quando non arrivano scansioni, la cancellazione dipende solo dal cron, che passa una volta al giorno con un'ora di tolleranza. Per questo la promessa è "entro 48 ore" e non "dopo 24 ore". **Vincolo per M3:** con una soglia di 24 ore il caso peggiore è circa 49 ore (24 di vita, fino a 24 ore e 59 minuti tra due passaggi del cron), quindi la soglia di cancellazione va scelta più bassa, in modo che la promessa delle 48 ore valga sempre.
