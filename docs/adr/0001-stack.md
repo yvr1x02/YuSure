@@ -37,6 +37,13 @@ Le richieste verso i siti, i controlli TLS e le chiamate a PageSpeed avvengono *
 ## Conseguenze
 
 - cheerio e ipaddr.js sono dipendenze da approvare in M0 e M1, con verifica di nome e fonte ufficiale.
+- **ipaddr.js 2.5.0**, approvato e installato in M1 (versione esatta) il 2026-11-25. Verifiche fatte prima dell'installazione:
+  - il nome del pacchetto è `ipaddr.js`; autore e unico maintainer su npm è `whitequark`, che è anche il proprietario del repository `github.com/whitequark/ipaddr.js` (non archiviato);
+  - licenza MIT, nessuna dipendenza, nessuno script di installazione, tipi TypeScript inclusi;
+  - il commit da cui è stato pubblicato (`gitHead` `dc55282`, "Bump version.") è sulla storia principale del repository ufficiale, 4 minuti prima della pubblicazione su npm (2026-08-04);
+  - `npm audit signatures`: firme del registry verificate per tutti i pacchetti installati;
+  - **manca il tag `v2.5.0`** su GitHub (l'ultimo è `v2.4.0`) e non ci sono release: la corrispondenza fra pacchetto e sorgente si appoggia sul `gitHead`, non su un tag.
+  - Dopo `ipaddr.process()` passa solo il range `unicast`: la libreria classifica già come non pubblici anche `3fff::/20`, NAT64, 6to4 e Teredo, senza bisogno di una lista nostra (test in `src/lib/safe-request/ip.test.ts`).
 - Serve una API key di PageSpeed (Google Cloud), da creare in M5.
 - Il database si raggiunge solo dal server, con la stringa di connessione in `DATABASE_URL` (ADR-0003). Il driver Postgres si sceglie e si installa in M3.
 - Piano Free di Neon: 100 CU-ore al mese per progetto, 1 GB di spazio per progetto; oltre il limite di CU-ore il compute resta sospeso fino al mese successivo, senza perdita di dati ([piani](https://neon.com/docs/introduction/plans), aggiornata il 2026-11-24).
