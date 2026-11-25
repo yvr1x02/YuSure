@@ -113,8 +113,18 @@ export const CHECKS = {
 
 export type CheckId = keyof typeof CHECKS;
 
+export const OUTCOME_LABELS: Record<Outcome, string> = {
+  ok: "Ok",
+  warning: "Attenzione",
+  problem: "Problema",
+  unverified: "Non verificato",
+};
+
+export type ReasonCode = SafeRequestErrorCode | "scan_deadline" | "no_https" | "certificate_expired";
+
 /** Shown in the form when the scan cannot start, and as the reason of "non verificato". */
-export const ERROR_MESSAGES: Record<SafeRequestErrorCode | "scan_deadline", string> = {
+export const ERROR_MESSAGES: Record<ReasonCode | "empty_address", string> = {
+  empty_address: "Scrivi l'indirizzo di un sito, per esempio trattoriadamario.it.",
   invalid_url: "Questo indirizzo non sembra valido. Prova a scriverlo così: trattoriadamario.it",
   not_allowed: "Questo indirizzo non si può analizzare: YuSure apre solo pagine web normali, senza porte particolari né password nell'indirizzo.",
   not_public: "Questo indirizzo non è un sito pubblico.",
@@ -128,6 +138,8 @@ export const ERROR_MESSAGES: Record<SafeRequestErrorCode | "scan_deadline", stri
   tls_error: "La connessione protetta non è riuscita perché il certificato non è valido.",
   bad_response: "Il sito ha risposto in un formato che YuSure non riesce a leggere.",
   scan_deadline: "La scansione ha superato i 30 secondi e si è fermata prima di questo controllo.",
+  no_https: "Il sito non risponde in https, quindi non c'è un certificato da controllare.",
+  certificate_expired: "Il certificato è già scaduto: lo segnala il controllo sul certificato di sicurezza.",
 };
 
 /** Fills {name} placeholders; a missing value is left visible rather than hidden. */
