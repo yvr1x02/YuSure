@@ -40,4 +40,5 @@ Le richieste verso i siti, i controlli TLS e le chiamate a PageSpeed avvengono *
 - Serve una API key di PageSpeed (Google Cloud), da creare in M5.
 - Il database si raggiunge solo dal server, con la stringa di connessione in `DATABASE_URL` (ADR-0003). Il driver Postgres si sceglie e si installa in M3.
 - Piano Free di Neon: 100 CU-ore al mese per progetto, 1 GB di spazio per progetto; oltre il limite di CU-ore il compute resta sospeso fino al mese successivo, senza perdita di dati ([piani](https://neon.com/docs/introduction/plans), aggiornata il 2026-11-24).
+- **Node.js 22** in locale e su Vercel. Su Vercel `engines.node` in `package.json` ha la precedenza sull'impostazione del progetto, e un intervallo aperto (`>=22…`) prenderebbe l'ultima versione disponibile (26.x): per questo è `22.x`. Si sceglie solo la versione principale; minori e patch le applica Vercel. Fonte: [Node.js versions](https://vercel.com/docs/functions/runtimes/node-js/node-js-versions), letta il 2026-11-25.
 - La durata massima delle funzioni su Vercel limita il tempo di una scansione: si verifica in M0 sulla documentazione del piano in uso (ADR-0003).
