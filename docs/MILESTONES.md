@@ -15,7 +15,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - `.gitignore` e `.env.example`.
 - **Direzione visiva** in `docs/DESIGN.md`, ripresa dalla sezione Browse del portfolio: palette, font, tipografia, aspetto di un risultato del report. Approvata prima di scrivere i componenti.
 - Layout di base, Home con il campo (ancora senza scansione) e pagina "Come funziona" con il testo di ADR-0002.
-- Progetto Supabase (account personale) e progetto Vercel collegati, con pubblicazione a ogni push.
+- Progetto Neon (piano Free, Francoforte) e progetto Vercel, con pubblicazione a ogni push e `DATABASE_URL` nelle variabili d'ambiente.
 - Verifiche di ADR-0003: `after()` su Vercel e durata massima delle funzioni.
 - Comandi compilati nel `CLAUDE.md`.
 
@@ -36,9 +36,9 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 
 ## M3 — Salvataggio, link e limiti
 
-- Tabelle `scans` e `scan_requests` con migrazioni e RLS (ADR-0003).
+- Driver Postgres (ADR-0001) e tabelle `scans` e `scan_requests` con migrazioni (ADR-0003).
 - Pagina `/report/[id]`, "Copia link", cache di 24 ore e "Rifai la scansione".
-- Limite per IP e tetto globale, IP come hash con sale, cancellazione dopo 24 ore.
+- Limite per IP e tetto globale, IP come hash con sale, cancellazione dopo 24 ore con il cron giornaliero.
 
 ## M4 — SEO e accessibilità dall'HTML
 
