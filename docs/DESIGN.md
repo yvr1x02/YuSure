@@ -64,13 +64,17 @@ Ocra (attenzione) e rame (link) sono tonalità vicine: i link si distinguono per
 
 ## Tipografia
 
-- **General Sans** (ITF Free Font License): testo e interfaccia. 400 testo, 500 etichette e pulsanti, 600 titoli piccoli. Niente 700.
+- **Hanken Grotesk** (SIL OFL 1.1): testo e interfaccia. 400 testo, 500 etichette e pulsanti, 600 titoli piccoli. Niente 700.
 - **Bricolage Grotesque** (SIL OFL 1.1): solo display.
   - 800 maiuscolo: il nome YuSure e il **punteggio**.
   - 300: il **giudizio** ("Buono", "Da migliorare", "Critico") e le frasi grandi.
   - 200: i **numeri di capitolo** delle sezioni: 01 Sicurezza, 02 Performance, 03 SEO, 04 Accessibilità.
 - **Monospace di sistema** (`ui-monospace`, nessun download): valori tecnici, header, millisecondi.
-- Font in locale con `next/font/local`, file variabili `.woff2`, licenze accanto ai file.
+- Font in locale con `next/font/local`, file variabili `.woff2` (solo asse del peso, latino), licenze accanto ai file in `src/app/fonts/`. Nessuna dipendenza npm: Hanken Grotesk viene da `@fontsource-variable/hanken-grotesk` 5.3.0, Bricolage Grotesque dal portfolio; le licenze dai repository ufficiali dei due font.
+
+### Perché non General Sans
+
+Browse usa General Sans per il testo. Qui non si può: la licenza di General Sans (ITF Free Font License v2.0 del 17 agosto 2026, §02) permette di ospitare il font sul proprio sito, ma vieta di distribuirlo tramite un repository o server accessibili pubblicamente, e il repository di YuSure è pubblico. Hanken Grotesk è il grottesco sotto OFL più vicino nel carattere: neutro, aperto, leggibile a piccole dimensioni. Il legame con Browse resta in Bricolage Grotesque.
 - Scala dal portfolio: testo con rapporto 1,125 (`xs`–`xl`), display con rapporto ~1,25. Tracking più stretto al crescere della dimensione.
 
 ## Impaginazione
