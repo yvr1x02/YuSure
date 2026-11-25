@@ -54,3 +54,15 @@ Il modulo ha test unitari per ogni regola, compresi i casi difficili: IPv6, `::f
 
 - Come forzare l'IP della connessione con il client HTTP di Node installato (opzione `lookup` o `connect` di undici, oppure `http`/`https` di Node).
 - Che la connessione TLS per il certificato usi la stessa protezione.
+
+## Esito dell'implementazione (M1, 2026-11-25)
+
+Modulo in `src/lib/safe-request/`; il resto del codice usa solo `safeRequest` e `inspectCertificate` da `index.ts`.
+
+- **Connessione all'IP verificato:** `node:http` e `node:https` di Node 22, senza undici. La richiesta parte con `host` uguale all'IP appena controllato, `servername` uguale al dominio (SNI e verifica del certificato) e l'header `Host` scritto a mano; una `lookup` che fallisce sempre impedisce a Node di risolvere il nome una seconda volta. Fonti, documentazione di Node v22: [`https.request`](https://nodejs.org/docs/latest-v22.x/api/https.html#httpsrequestoptions-callback) accetta `servername` e `ca`; [`tls.connect`](https://nodejs.org/docs/latest-v22.x/api/tls.html#tlsconnectoptions-callback) verifica il certificato contro `servername` quando è impostato. undici scartato: per `fetch` con un `dispatcher` servirebbe il pacchetto `undici` come dipendenza, legato alla versione inclusa in Node.
+- **Il limite di 10 secondi** è un `AbortSignal`, non l'opzione `timeout` (che secondo la documentazione non interrompe la richiesta): copre connessione, header e corpo.
+- **Certificato:** `tls.connect` verso lo stesso IP verificato, con `servername` e `rejectUnauthorized: false` per poter leggere anche un certificato non valido; stessi controlli di URL e DNS.
+- **Controllo degli IP:** dopo `ipaddr.process()` passa solo il range `unicast` (lista di ammessi). Se la risposta DNS contiene anche un solo IP non pubblico, fra A e AAAA, la richiesta si blocca; la connessione preferisce l'IPv4.
+- **Porte:** solo quella predefinita dello schema (80 per `http`, 443 per `https`).
+- **Tempo massimo della scansione:** 30 secondi in tutto, oltre ai 10 per richiesta; allo scadere i controlli non finiti risultano "non verificato" (SPEC).
+- **Test senza internet:** resolver finto e `mapAddress`, che manda le connessioni a server locali su 127.0.0.1 con un certificato di test; un test fallisce se `createSafeRequest` o `mapAddress` vengono usati fuori dalla cartella. Fra i casi c'è il DNS che cambia risposta fra controllo e connessione.
