@@ -1,8 +1,10 @@
+import { once } from "node:events";
 import http, { type IncomingHttpHeaders, type IncomingMessage } from "node:http";
 import https from "node:https";
 import type { LookupFunction } from "node:net";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import tls from "node:tls";
 import zlib from "node:zlib";
 
 import { SafeRequestError } from "./errors";
@@ -175,8 +177,51 @@ export function createSafeRequest(deps: SafeRequestDeps) {
     return new SafeRequestError("connection_failed", code || String(error));
   }
 
-  return { safeRequest };
+  /**
+   * Opens a TLS connection to the verified IP on 443 just to read the certificate,
+   * with the same checks as safeRequest. An invalid certificate is a result, not an error.
+   */
+  async function inspectCertificate(input: URL, options: Pick<SafeRequestOptions, "signal"> = {}) {
+    const url = new URL(`https://${input.hostname}/`);
+    const timeout = AbortSignal.timeout(deps.timeoutMs);
+    const signal = options.signal ? AbortSignal.any([options.signal, timeout]) : timeout;
+    let socket: tls.TLSSocket | undefined;
+    try {
+      checkUrl(url);
+      const address = await abortable(resolvePublic(url.hostname, deps.resolve), signal);
+      const target = deps.mapAddress(address, 443);
+      socket = tls.connect({
+        host: target.host,
+        port: target.port,
+        servername: url.hostname,
+        ca: deps.ca,
+        rejectUnauthorized: false,
+        lookup: refuseLookup,
+      });
+      await once(socket, "secureConnect", { signal });
+
+      const certificate = socket.getPeerCertificate();
+      if (!certificate.valid_to) throw new SafeRequestError("bad_response", "no certificate presented");
+      return {
+        address,
+        authorized: socket.authorized,
+        authorizationError: socket.authorizationError ? String(socket.authorizationError) : undefined,
+        validFrom: new Date(certificate.valid_from),
+        validTo: new Date(certificate.valid_to),
+        issuer: certificate.issuer?.O ?? certificate.issuer?.CN,
+        subjectAltNames: certificate.subjectaltname?.split(", ") ?? [],
+      };
+    } catch (error) {
+      throw classify(error, options.signal, timeout);
+    } finally {
+      socket?.destroy();
+    }
+  }
+
+  return { safeRequest, inspectCertificate };
 }
+
+export type CertificateInfo = Awaited<ReturnType<ReturnType<typeof createSafeRequest>["inspectCertificate"]>>;
 
 /** null: no decoding needed; undefined: an encoding we did not ask for. */
 function createDecoder(encoding: string) {

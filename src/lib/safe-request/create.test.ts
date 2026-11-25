@@ -2,7 +2,7 @@ import { once } from "node:events";
 import { readFileSync } from "node:fs";
 import http from "node:http";
 import https from "node:https";
-import type { AddressInfo } from "node:net";
+import net, { type AddressInfo } from "node:net";
 import zlib from "node:zlib";
 
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -364,5 +364,53 @@ describe("size limit", () => {
       res.end("x");
     };
     await expect(codeOf(setup().safeRequest(new URL("http://esempio.test/")))).resolves.toBe("bad_response");
+  });
+});
+
+describe("inspectCertificate", () => {
+  it("reads the certificate from the verified IP, with the domain as SNI", async () => {
+    const { inspectCertificate, mapAddress } = setup();
+    const info = await inspectCertificate(new URL("http://esempio.test/menu"));
+    expect(mapAddress).toHaveBeenCalledWith("8.8.8.8", 443);
+    expect(info).toMatchObject({ address: "8.8.8.8", authorized: true, authorizationError: undefined });
+    expect(info.validTo.getUTCFullYear()).toBe(2126);
+    expect(info.subjectAltNames).toEqual(["DNS:esempio.test"]);
+  });
+
+  it("still reads a certificate the system does not trust", async () => {
+    const info = await setup({ ca: undefined }).inspectCertificate(new URL("https://esempio.test/"));
+    expect(info).toMatchObject({ authorized: false, authorizationError: "DEPTH_ZERO_SELF_SIGNED_CERT" });
+    expect(info.validTo.getUTCFullYear()).toBe(2126);
+  });
+
+  it("still reads a certificate issued for another name", async () => {
+    const info = await setup().inspectCertificate(new URL("https://www.esempio.test/"));
+    expect(info).toMatchObject({ authorized: false, authorizationError: "ERR_TLS_CERT_ALTNAME_INVALID" });
+  });
+
+  it("applies the same address checks as a request", async () => {
+    const { inspectCertificate, mapAddress } = setup();
+    await expect(codeOf(inspectCertificate(new URL("https://interno.test/")))).resolves.toBe("not_public");
+    await expect(codeOf(inspectCertificate(new URL("https://localhost/")))).resolves.toBe("not_public");
+    expect(mapAddress).not.toHaveBeenCalled();
+  });
+
+  it("never lets Node resolve a name a second time", async () => {
+    const { inspectCertificate } = setup({ mapAddress: () => ({ host: "localhost", port: httpsPort }) });
+    await expect(codeOf(inspectCertificate(new URL("https://esempio.test/")))).resolves.toBe("connection_failed");
+  });
+
+  it("gives up on a server that never completes the handshake", async () => {
+    const silent = net.createServer(() => {}).listen(0, "127.0.0.1");
+    await once(silent, "listening");
+    const port = (silent.address() as AddressInfo).port;
+    const { inspectCertificate } = setup({ timeoutMs: 200, mapAddress: () => ({ host: "127.0.0.1", port }) });
+    await expect(codeOf(inspectCertificate(new URL("https://esempio.test/")))).resolves.toBe("timeout");
+    silent.close();
+  });
+
+  it("reports a refused connection", async () => {
+    const { inspectCertificate } = setup({ mapAddress: () => ({ host: "127.0.0.1", port: closedPort }) });
+    await expect(codeOf(inspectCertificate(new URL("https://esempio.test/")))).resolves.toBe("connection_refused");
   });
 });
