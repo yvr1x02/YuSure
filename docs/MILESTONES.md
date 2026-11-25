@@ -21,7 +21,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 
 **Da verificare dopo il merge di M0:**
 - L'indirizzo di produzione è pubblico, raggiungibile senza accesso a Vercel. Le anteprime protette vanno bene, la produzione no. *Verificato il 2026-11-25 dopo il merge della PR #1: `https://yusure.vercel.app/` e `/come-funziona` rispondono senza accesso; l'anteprima di `m0` rimanda al login.*
-- Il deploy di produzione usa Node 22: la PR #1 è stata costruita con `engines.node` `>=22.12.0`, cioè con l'ultima versione disponibile; `22.x` arriva con la seconda PR di M0.
+- Il deploy di produzione usa Node 22: la PR #1 è stata costruita con `engines.node` `>=22.12.0`, cioè con l'ultima versione disponibile; `22.x` arriva con la seconda PR di M0. *Verificato il 2026-11-25: il deploy di produzione della PR #3 è costruito con Node 22.x (`Node.js version changed from "26.x" to "22.x"`), ma con un avviso perché le impostazioni del progetto Vercel dicevano 26.x; portate a 22.x, il primo deploy di `m1` (`77919b2`) ha il log senza avvisi su engines.*
 
 ## M1 — Richieste sicure e primi controlli
 
