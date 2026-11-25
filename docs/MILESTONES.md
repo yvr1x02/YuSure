@@ -6,7 +6,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - ogni nuova pagina entra nel controllo di accessibilità con axe (WCAG 2.2 AA) nello stesso commit che la aggiunge;
 - ogni controllo nuovo ha test unitari sui casi ok, attenzione, problema e non verificato.
 
-**Milestone attiva:** M1
+**Milestone attiva:** M2
 
 ## M0 — Fondamenta (completata il 2026-11-25)
 
@@ -23,7 +23,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - L'indirizzo di produzione è pubblico, raggiungibile senza accesso a Vercel. Le anteprime protette vanno bene, la produzione no. *Verificato il 2026-11-25 dopo il merge della PR #1: `https://yusure.vercel.app/` e `/come-funziona` rispondono senza accesso; l'anteprima di `m0` rimanda al login.*
 - Il deploy di produzione usa Node 22: la PR #1 è stata costruita con `engines.node` `>=22.12.0`, cioè con l'ultima versione disponibile; `22.x` arriva con la seconda PR di M0. *Verificato il 2026-11-25: il deploy di produzione della PR #3 è costruito con Node 22.x (`Node.js version changed from "26.x" to "22.x"`), ma con un avviso perché le impostazioni del progetto Vercel dicevano 26.x; portate a 22.x, il primo deploy di `m1` (`77919b2`) ha il log senza avvisi su engines.*
 
-## M1 — Richieste sicure e primi controlli
+## M1 — Richieste sicure e primi controlli (completata il 2026-11-25)
 
 - Modulo di richiesta sicura (ADR-0002), con tutti i test dei casi difficili.
 - Normalizzazione dell'indirizzo inserito.
@@ -31,12 +31,18 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Catalogo dei controlli: struttura dei testi per il titolare, dettagli tecnici, gravità e peso.
 - Report mostrato subito dopo la scansione, senza salvataggio.
 - Decidere `cacheComponents` e `partialPrefetching` con una prova, registrando la scelta in un ADR.
+- Scansioni attive solo dove `SCAN_ENABLED` è `true`: Preview sì, Production no fino a M3.
+
+**Da verificare dopo il merge di M1:**
+- In produzione la Home mostra "YuSure è in costruzione" senza il form, e la Server Action rifiuta le richieste: `SCAN_ENABLED` non è impostata per Production.
+- In anteprima, con `SCAN_ENABLED=true` per Preview, una scansione vera da Vercel (fra1) completa i quattro controlli.
 
 ## M2 — Sicurezza completa e punteggio
 
 - Header di sicurezza, cookie, versioni esposte, contenuto misto (con cheerio).
 - Calcolo dei punteggi (SPEC, "Punteggio") in funzioni pure testate.
 - Report completo per la sezione Sicurezza: riepilogo "Da sistemare subito", dettagli tecnici apribili.
+- I controlli sulla pagina usano la versione `http://` quando `https` non risponde o il certificato non è valido, con una nota nel report (SPEC, regole comuni).
 
 ## M3 — Salvataggio, link e limiti
 
