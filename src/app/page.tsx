@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import { ScanForm } from "@/components/scan-form";
 
 export default function Home() {
@@ -10,7 +12,10 @@ export default function Home() {
         <p className="max-w-text text-lg text-ink-muted">
           YuSure controlla sicurezza, velocità, visibilità su Google e accessibilità di un sito e
           ti spiega i risultati in parole semplici. Legge solo ciò che il sito mostra a tutti: non
-          forza nulla.
+          forza nulla.{" "}
+          <Link href="/come-funziona" className="text-ink-accent underline underline-offset-4">
+            Come funziona
+          </Link>
         </p>
       </div>
       <ScanForm />

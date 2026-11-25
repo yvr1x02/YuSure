@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 
 // Every page joins this list in the commit that adds it (docs/MILESTONES.md).
-const pages = ["/"];
+const pages = ["/", "/come-funziona"];
 
 for (const path of pages) {
   test(`${path} has no WCAG 2.2 AA violations`, async ({ page }) => {

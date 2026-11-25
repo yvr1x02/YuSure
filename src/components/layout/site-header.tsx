@@ -6,6 +6,11 @@ export function SiteHeader() {
       <Link href="/" className="font-display text-xl font-extrabold tracking-tight uppercase">
         YuSure
       </Link>
+      <nav aria-label="Principale">
+        <Link href="/come-funziona" className="font-medium underline-offset-4 hover:underline">
+          Come funziona
+        </Link>
+      </nav>
     </header>
   );
 }

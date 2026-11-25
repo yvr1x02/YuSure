@@ -52,6 +52,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - API key di PageSpeed (la crea l'utente) e verifica della quota per il tetto globale.
 - Esecuzione in due tempi con `after()` e aggiornamento della pagina del report.
 - Core Web Vitals, opportunità di miglioramento, punteggio e controlli di accessibilità di Lighthouse.
+- Togliere da "Come funziona" la riga "YuSure è in costruzione: le scansioni arrivano a breve".
 
 ## M6 — Passata di stile
 
