@@ -25,6 +25,8 @@
 # misc
 .DS_Store
 *.pem
+# test-only certificate and key, public on purpose (see the README next to them)
+!/src/lib/safe-request/fixtures/test-only-*.pem
 
 # debug
 npm-debug.log*
