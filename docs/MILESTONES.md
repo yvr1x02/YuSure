@@ -26,6 +26,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Controlli: HTTPS, redirect da `http`, certificato e scadenza.
 - Catalogo dei controlli: struttura dei testi per il titolare, dettagli tecnici, gravità e peso.
 - Report mostrato subito dopo la scansione, senza salvataggio.
+- Decidere `cacheComponents` e `partialPrefetching` con una prova, registrando la scelta in un ADR.
 
 ## M2 — Sicurezza completa e punteggio
 
