@@ -94,3 +94,15 @@ Lette il 2026-11-25, prima di creare qualsiasi risorsa. Sono condizioni di servi
 
 - Una volta al giorno al massimo, con precisione di un'ora (±59 minuti), in UTC, solo sui deploy di produzione; nessun nuovo tentativo se fallisce. L'endpoint si protegge con `CRON_SECRET`, inviato da Vercel nell'header `Authorization: Bearer …`. I cron sono indicati come funzione "legacy" che verrà migrata a Schedules. Fonti: [Cron Jobs](https://vercel.com/docs/cron-jobs), aggiornata il 2026-09-16; [uso e prezzi](https://vercel.com/docs/cron-jobs/usage-and-pricing), aggiornata il 2026-07-15; [gestione](https://vercel.com/docs/cron-jobs/manage-cron-jobs), aggiornata il 2026-08-11.
 - **Conseguenza:** quando non arrivano scansioni, la cancellazione dipende solo dal cron, che passa una volta al giorno con un'ora di tolleranza. Per questo la promessa è "entro 48 ore" e non "dopo 24 ore". **Vincolo per M3:** con una soglia di 24 ore il caso peggiore è circa 49 ore (24 di vita, fino a 24 ore e 59 minuti tra due passaggi del cron), quindi la soglia di cancellazione va scelta più bassa, in modo che la promessa delle 48 ore valga sempre.
+
+## Verifiche M0: `after()` e durata delle funzioni
+
+Verificate il 2026-11-25 sulla documentazione di Next.js 16.4.6 installata e su quella di Vercel. Non ancora provate su un deploy reale: la prova è in M5, quando `after()` si usa davvero.
+
+- **`after()` è stabile** da Next.js 15.1 e non rende dinamica la route. Gira "for the platform's default or configured max duration of your route", configurabile con `maxDuration` nella configurazione del segmento. Fonte: `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/after.md`.
+- **Su Vercel `after()` si appoggia a `waitUntil`**: il lavoro continua dopo la risposta, ma con lo stesso limite di tempo della funzione, e se la funzione supera il limite viene interrotto. Il limite conta dall'arrivo della richiesta e comprende anche il lavoro dopo la risposta. Vercel consiglia `after()` a chi usa Next.js 15.1 o successivi. Fonte: [pacchetto @vercel/functions](https://vercel.com/docs/functions/functions-api-reference/vercel-functions-package), aggiornata il 2026-09-03.
+- **Durata massima su Hobby, con Fluid compute (predefinito):** 300 secondi, sia come valore predefinito sia come massimo. Fonte: [durata delle funzioni](https://vercel.com/docs/functions/configuring-functions/duration), aggiornata il 2026-08-24.
+- **Conseguenze per YuSure:**
+  - controlli propri e chiamata a PageSpeed (spesso 10–30 secondi) stanno insieme ben dentro i 300 secondi della stessa richiesta: l'esecuzione in due tempi descritta sopra resta valida su Hobby;
+  - in M5 si imposta `maxDuration` in modo esplicito sulla route di scansione, così il limite è scritto nel codice e non dipende dal piano;
+  - con `cacheComponents` attivo, dentro `after()` chiamato da un Server Component non si possono usare `cookies()` o `headers()`: la scansione parte da un Route Handler o da una Server Function, dove sono permessi.
