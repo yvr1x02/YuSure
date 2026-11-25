@@ -24,7 +24,7 @@ Specifica: [docs/SPEC.md](docs/SPEC.md). Piano a milestone: [docs/MILESTONES.md]
 
 ## Comandi
 
-Node 22.12 o successivo. Le variabili d'ambiente stanno in `.env.local` (modello in `.env.example`).
+Node 22 (`engines.node` è `22.x`: su Vercel decide la versione, ADR-0001). Le variabili d'ambiente stanno in `.env.local` (modello in `.env.example`).
 
 | Comando | Cosa fa |
 |---|---|
