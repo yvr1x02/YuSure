@@ -1,6 +1,8 @@
 import Link from "next/link";
 
 import { ScanForm } from "@/components/scan-form";
+import { ERROR_MESSAGES } from "@/lib/checks/catalog";
+import { isScanEnabled } from "@/lib/scan-enabled";
 
 export default function Home() {
   return (
@@ -18,7 +20,7 @@ export default function Home() {
           </Link>
         </p>
       </div>
-      <ScanForm />
+      {isScanEnabled() ? <ScanForm /> : <p className="text-lg font-medium">{ERROR_MESSAGES.scan_disabled}</p>}
     </div>
   );
 }

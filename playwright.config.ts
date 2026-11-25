@@ -14,6 +14,8 @@ export default defineConfig({
     command: `npm run build && npm run start -- --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
+    // The e2e tests drive the scan form: scans on for this build.
+    env: { SCAN_ENABLED: "true" },
     timeout: 120_000,
   },
 });

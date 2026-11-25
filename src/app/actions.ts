@@ -2,6 +2,7 @@
 
 import { ERROR_MESSAGES } from "@/lib/checks/catalog";
 import { runScan, type ScanReport } from "@/lib/checks/scan";
+import { isScanEnabled } from "@/lib/scan-enabled";
 import { inspectCertificate, normalizeAddress, safeRequest, SafeRequestError } from "@/lib/safe-request";
 
 export type ScanState =
@@ -15,6 +16,8 @@ const MAX_ADDRESS_LENGTH = 2048;
 /** Runs a scan and returns the report, without saving anything (M1). */
 export async function scan(_previous: ScanState, formData: FormData): Promise<ScanState> {
   const address = String(formData.get("url") ?? "");
+  // Refused before any parsing or network: this endpoint is public even when the form is hidden.
+  if (!isScanEnabled()) return { status: "error", address: "", message: ERROR_MESSAGES.scan_disabled };
   if (!address.trim()) return { status: "error", address, message: ERROR_MESSAGES.empty_address };
   if (address.length > MAX_ADDRESS_LENGTH) {
     return { status: "error", address: "", message: ERROR_MESSAGES.invalid_url };

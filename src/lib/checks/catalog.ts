@@ -123,8 +123,9 @@ export const OUTCOME_LABELS: Record<Outcome, string> = {
 export type ReasonCode = SafeRequestErrorCode | "no_https" | "certificate_expired";
 
 /** Shown in the form when the scan cannot start, and as the reason of "non verificato". */
-export const ERROR_MESSAGES: Record<ReasonCode | "empty_address", string> = {
+export const ERROR_MESSAGES: Record<ReasonCode | "empty_address" | "scan_disabled", string> = {
   empty_address: "Scrivi l'indirizzo di un sito, per esempio trattoriadamario.it.",
+  scan_disabled: "YuSure è in costruzione: le scansioni arrivano a breve.",
   invalid_url: "Questo indirizzo non sembra valido. Prova a scriverlo così: trattoriadamario.it",
   not_allowed: "Questo indirizzo non si può analizzare: YuSure apre solo pagine web normali, senza porte particolari né password nell'indirizzo.",
   not_public: "Questo indirizzo non è un sito pubblico.",

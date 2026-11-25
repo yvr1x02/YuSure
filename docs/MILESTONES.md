@@ -45,6 +45,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Pagina `/report/[id]`, "Copia link", cache di 24 ore e "Rifai la scansione".
 - Limite per IP e tetto globale, IP come hash con sale.
 - Cancellazione degli hash scaduti a ogni scansione, più il cron giornaliero come rete di sicurezza: cancellazione entro 48 ore (ADR-0003).
+- Accendere le scansioni in produzione: `SCAN_ENABLED=true` per Production su Vercel e nuovo deploy, solo dopo che limite per IP e tetto globale sono attivi e verificati.
 
 ## M4 — SEO e accessibilità dall'HTML
 
