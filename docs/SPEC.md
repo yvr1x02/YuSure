@@ -37,7 +37,7 @@ Pubblico del report: prima il titolare, poi lo sviluppatore. Ogni risultato ha u
 - I problemi gravi compaiono per primi in un riepilogo "Da sistemare subito".
 - I risultati che arrivano dopo (Performance, ADR-0003) mostrano uno stato di caricamento e si completano da soli.
 - Pulsante "Copia link" del report e "Rifai la scansione" (soggetto alla cache di 24 ore).
-- In fondo, discreto: "Vuoi sistemare questi problemi? Contattami", con link al portfolio.
+- In fondo, discreta, una firma neutra: "Un progetto di Yuri Impellizzeri", con link al portfolio. Nessun invito a proporre lavori finché YuSure è sul piano Hobby di Vercel (ADR-0003).
 
 ### 3. Come funziona (`/come-funziona`)
 

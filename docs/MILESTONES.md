@@ -57,7 +57,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 
 - Revisione dell'aspetto di Home, Report e Come funziona rispetto a `docs/DESIGN.md`.
 - Stati di caricamento, errori e casi limite curati.
-- Link "Contattami" in fondo al report.
+- Firma "Un progetto di Yuri Impellizzeri" in fondo al report, con link al portfolio, senza invito a proporre lavori (ADR-0003).
 
 ## M7 — Rifinitura
 
