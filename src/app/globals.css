@@ -53,6 +53,7 @@
   --radius-xl: 1rem;
 
   --container-page: 48rem;
+  --container-text: 68ch;
 }
 
 @layer base {
