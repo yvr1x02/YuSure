@@ -1,1 +1,83 @@
 @import "tailwindcss";
+
+/* Raw values (docs/DESIGN.md). Plain properties, not theme tokens, so no utility
+   exists for them: components can only reach a colour through its role below. */
+:root {
+  --ivory: #f5f1e9;
+  --sand: #e4d9c9;
+  --sand-deep: #d6c8b4;
+  --umber-900: #28231f;
+  --umber-700: #5b524a;
+  --umber-600: #6e665e;
+  --copper-300: #cf946d;
+  --copper-400: #c4875f;
+  --copper-800: #7e4c30;
+  --green-700: #3d6b45;
+  --ochre-700: #875a12;
+  --brick-600: #a1121c;
+
+  --duration-hover: 160ms;
+  --duration-unhover: 220ms;
+  --duration-release: 380ms;
+  --duration-lift: 190ms;
+  --duration-reveal: 700ms;
+  --duration-reduced: 200ms;
+}
+
+@theme {
+  --color-*: initial;
+  --color-surface: var(--ivory);
+  --color-surface-raised: var(--sand);
+  --color-ink: var(--umber-900);
+  --color-ink-muted: var(--umber-700);
+  --color-ink-subtle: var(--umber-600);
+  --color-ink-accent: var(--copper-800);
+  --color-fill-accent: var(--copper-400);
+  --color-fill-accent-hover: var(--copper-300);
+  --color-edge-subtle: var(--sand-deep);
+  --color-edge: var(--umber-700);
+  --color-focus-ring: var(--umber-900);
+  --color-status-ok: var(--green-700);
+  --color-status-warn: var(--ochre-700);
+  --color-status-bad: var(--brick-600);
+  --color-status-unknown: var(--umber-600);
+
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-bricolage), ui-sans-serif, system-ui, sans-serif;
+
+  --ease-state: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-reveal: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --radius-md: 0.625rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+
+  --container-page: 48rem;
+}
+
+@layer base {
+  html {
+    background-color: var(--color-surface);
+  }
+
+  body {
+    @apply bg-surface font-sans text-ink antialiased;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+  }
+}
+
+/* Reduced motion: nothing travels or pulses, everything is one short cross-fade. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: var(--duration-reduced) !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: var(--duration-reduced) !important;
+    scroll-behavior: auto !important;
+  }
+}
