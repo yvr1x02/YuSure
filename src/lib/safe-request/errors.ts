@@ -8,7 +8,8 @@ export type SafeRequestErrorCode =
   | "timeout"
   | "too_large"
   | "too_many_redirects"
-  | "tls_error";
+  | "tls_error"
+  | "bad_response";
 
 /** `code` drives the message shown to the user; `message` is the technical reason, for server logs only. */
 export class SafeRequestError extends Error {
