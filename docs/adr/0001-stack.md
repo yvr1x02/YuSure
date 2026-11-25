@@ -1,6 +1,6 @@
 # ADR-0001 — Stack tecnico
 
-**Stato:** accettato
+**Stato:** accettato, modificato il 2026-11-25 (database: Neon al posto di Supabase)
 **Data:** 2026-11-25
 
 ## Contesto
@@ -14,7 +14,7 @@ YuSure fa richieste verso siti esterni, deve salvare i report e servirli con un 
 | Framework | Next.js (App Router), runtime Node.js per le route che scansionano |
 | Linguaggio | TypeScript |
 | Stile | Tailwind CSS v4 |
-| Database | Supabase (Postgres), account dei progetti personali |
+| Database | Neon (Postgres), piano Free, regione Francoforte (`aws-eu-central-1`) |
 | Hosting | Vercel |
 | Analisi dell'HTML | cheerio |
 | Controllo degli IP | ipaddr.js |
@@ -30,10 +30,14 @@ Le richieste verso i siti, i controlli TLS e le chiamate a PageSpeed avvengono *
 - **Lighthouse eseguito da noi** (Chrome headless su una funzione serverless). Scartato: pesante, lento a partire e fragile su Vercel. PageSpeed esegue Lighthouse sui server di Google ed è gratuito con una API key.
 - **Parsing dell'HTML con espressioni regolari.** Scartato: fragile su HTML reale e malformato; cheerio usa un parser conforme.
 - **Controllo degli IP scritto a mano.** Scartato: è il cuore della protezione SSRF, e IPv6, gli IPv4 incapsulati in IPv6 e le notazioni alternative sono facili da sbagliare. ipaddr.js è una libreria matura per esattamente questo.
-- **Un database diverso o nessun database.** Senza database non ci sono link condivisibili né cache; Supabase è già in uso nei progetti personali.
+- **Nessun database.** Senza database non ci sono link condivisibili né cache.
+- **Supabase**, scelta iniziale. Scartato: sul piano Free un progetto con poca attività per 7 giorni va in pausa e si riprende solo a mano dalla dashboard; nel frattempo i link ai report resterebbero rotti. Neon invece sospende il compute dopo 5 minuti di inattività e lo riattiva da solo alla prima query, in qualche centinaio di millisecondi ([scale to zero](https://neon.com/docs/introduction/scale-to-zero), aggiornata il 2026-11-04).
+- **Cloudflare D1.** Scartato: da una funzione su Vercel si raggiunge solo tramite l'API HTTP dell'account Cloudflare, con un token dell'account, invece che con una normale connessione al database.
 
 ## Conseguenze
 
 - cheerio e ipaddr.js sono dipendenze da approvare in M0 e M1, con verifica di nome e fonte ufficiale.
 - Serve una API key di PageSpeed (Google Cloud), da creare in M5.
+- Il database si raggiunge solo dal server, con la stringa di connessione in `DATABASE_URL` (ADR-0003). Il driver Postgres si sceglie e si installa in M3.
+- Piano Free di Neon: 100 CU-ore al mese per progetto, 1 GB di spazio per progetto; oltre il limite di CU-ore il compute resta sospeso fino al mese successivo, senza perdita di dati ([piani](https://neon.com/docs/introduction/plans), aggiornata il 2026-11-24).
 - La durata massima delle funzioni su Vercel limita il tempo di una scansione: si verifica in M0 sulla documentazione del piano in uso (ADR-0003).

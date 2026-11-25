@@ -15,7 +15,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - `.gitignore` e `.env.example`.
 - **Direzione visiva** in `docs/DESIGN.md`, ripresa dalla sezione Browse del portfolio: palette, font, tipografia, aspetto di un risultato del report. Approvata prima di scrivere i componenti.
 - Layout di base, Home con il campo (ancora senza scansione) e pagina "Come funziona" con il testo di ADR-0002.
-- Progetto Supabase (account personale) e progetto Vercel collegati, con pubblicazione a ogni push.
+- Progetto Neon (piano Free, Francoforte) e progetto Vercel, con pubblicazione a ogni push e `DATABASE_URL` nelle variabili d'ambiente.
 - Verifiche di ADR-0003: `after()` su Vercel e durata massima delle funzioni.
 - Comandi compilati nel `CLAUDE.md`.
 
@@ -26,6 +26,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Controlli: HTTPS, redirect da `http`, certificato e scadenza.
 - Catalogo dei controlli: struttura dei testi per il titolare, dettagli tecnici, gravità e peso.
 - Report mostrato subito dopo la scansione, senza salvataggio.
+- Decidere `cacheComponents` e `partialPrefetching` con una prova, registrando la scelta in un ADR.
 
 ## M2 — Sicurezza completa e punteggio
 
@@ -35,9 +36,11 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 
 ## M3 — Salvataggio, link e limiti
 
-- Tabelle `scans` e `scan_requests` con migrazioni e RLS (ADR-0003).
+- Driver Postgres approvato: `pg`, `@types/pg` e `@vercel/functions` (ADR-0001), con una prova sui tempi di avvio a freddo prima della scelta definitiva.
+- Tabelle `scans` e `scan_requests` con migrazioni (ADR-0003).
 - Pagina `/report/[id]`, "Copia link", cache di 24 ore e "Rifai la scansione".
-- Limite per IP e tetto globale, IP come hash con sale, cancellazione dopo 24 ore.
+- Limite per IP e tetto globale, IP come hash con sale.
+- Cancellazione degli hash scaduti a ogni scansione, più il cron giornaliero come rete di sicurezza: cancellazione entro 48 ore (ADR-0003).
 
 ## M4 — SEO e accessibilità dall'HTML
 
@@ -49,12 +52,13 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - API key di PageSpeed (la crea l'utente) e verifica della quota per il tetto globale.
 - Esecuzione in due tempi con `after()` e aggiornamento della pagina del report.
 - Core Web Vitals, opportunità di miglioramento, punteggio e controlli di accessibilità di Lighthouse.
+- Togliere da "Come funziona" la riga "YuSure è in costruzione: le scansioni arrivano a breve".
 
 ## M6 — Passata di stile
 
 - Revisione dell'aspetto di Home, Report e Come funziona rispetto a `docs/DESIGN.md`.
 - Stati di caricamento, errori e casi limite curati.
-- Link "Contattami" in fondo al report.
+- Firma "Un progetto di Yuri Impellizzeri" in fondo al report, con link al portfolio, senza invito a proporre lavori (ADR-0003).
 
 ## M7 — Rifinitura
 

@@ -1,6 +1,6 @@
 # ADR-0003 — Report, cache, limiti e dati salvati
 
-**Stato:** accettato
+**Stato:** accettato, modificato il 2026-11-25 (database: Neon al posto di Supabase, ADR-0001)
 **Data:** 2026-11-25
 
 ## Contesto
@@ -22,7 +22,7 @@ Così il report compare in pochi secondi e il tempo di PageSpeed non blocca ness
 
 ### Salvataggio
 
-Una tabella `scans` su Supabase:
+Una tabella `scans` su Neon:
 
 | Campo | Contenuto |
 |---|---|
@@ -34,7 +34,7 @@ Una tabella `scans` su Supabase:
 | `checks` | risultati dei controlli (JSON), con la versione del catalogo |
 | `scores` | punteggi per sezione e totale |
 
-- **Row Level Security attiva senza policy pubbliche:** il browser non legge né scrive il database. Tutto passa dal server, con la chiave di Supabase con privilegi.
+- **Il database si raggiunge solo dal server**, con la stringa di connessione in `DATABASE_URL`. Il browser non legge né scrive il database e non esiste un'API pubblica verso di esso, quindi non serve la Row Level Security.
 - I report non scadono nella v1: riguardano siti pubblici e contengono solo ciò che quei siti mostrano a tutti.
 - I risultati salvano dati grezzi (header letti, valori misurati), non frasi: le frasi del report vengono dal catalogo dei controlli al momento della visualizzazione, così una correzione dei testi vale anche per i report vecchi.
 
@@ -46,12 +46,13 @@ Se lo stesso dominio è stato scansionato nelle ultime 24 ore, si apre quel repo
 
 - **Per IP:** al massimo 5 scansioni nuove all'ora (i report già in cache non contano).
 - **Globale:** un tetto giornaliero di scansioni nuove, sotto la quota di PageSpeed verificata in M5. Oltre il tetto si risponde con un messaggio chiaro.
-- I limiti si contano in una tabella `scan_requests` su Supabase: niente servizi in più.
+- I limiti si contano in una tabella `scan_requests` su Neon: niente servizi in più.
 
 ### IP e privacy
 
 - L'IP si salva solo come **hash con sale** (HMAC con un segreto del server) nella tabella dei limiti, mai nella tabella dei report.
-- Le righe dei limiti più vecchie di 24 ore si cancellano. Il meccanismo (cancellazione a ogni scansione o job pianificato) si sceglie in M3.
+- Le righe dei limiti scadute si cancellano **a ogni scansione**; un **cron giornaliero** di Vercel, protetto con `CRON_SECRET`, fa da rete di sicurezza quando non arrivano scansioni.
+- Promessa pubblica (pagina "Come funziona"): l'hash dell'IP **si cancella entro 48 ore**.
 - Nessun cookie di profilazione, nessuna analytics che salvi dati personali.
 
 ## Alternative considerate
@@ -67,3 +68,41 @@ Se lo stesso dominio è stato scansionato nelle ultime 24 ore, si apre quel repo
 - In M0 si verificano sulla documentazione di Next.js e Vercel installati: il comportamento di `after()` su Vercel e la durata massima delle funzioni nel piano in uso.
 - Il catalogo dei controlli ha una versione: i report vecchi indicano con quale versione sono stati fatti.
 - Il tetto globale e i 5 all'ora sono valori di partenza, configurabili da variabili d'ambiente.
+
+## Verifiche M0: condizioni dei piani gratuiti
+
+Lette il 2026-11-25, prima di creare qualsiasi risorsa. Sono condizioni di servizio, non consulenza legale: dove il testo è ambiguo lo dice.
+
+### Vercel, piano Hobby
+
+- **Uso consentito.** I Termini di servizio, §4 "Hobby Plan", limitano Hobby all'uso "personal or non-commercial". Vercel può rimuovere progetti Hobby senza preavviso. Fonte: [Terms of Service](https://vercel.com/legal/terms), aggiornati il 19 ottobre 2026.
+- **"Commerciale" non è definito** in nessuna delle pagine lette (Termini, Acceptable Use Policy, Fair Use Guidelines, piani, prezzi). Le pagine di [piani](https://vercel.com/docs/plans) e [prezzi](https://vercel.com/pricing) descrivono Pro come il piano pensato anche per i freelance. Un report con il link "Contattami" per proporre lavori **non è trattato esplicitamente: il caso è ambiguo**.
+- **Uso corretto.** Le [Fair Use Guidelines](https://vercel.com/docs/limits/fair-use-guidelines) (aggiornate il 12 novembre 2026) elencano tra i casi "Never fair use" anche **Scrapers** e **Penetration testing**, su tutti i piani. YuSure non è né l'uno né l'altro per come è progettato (ADR-0002: una pagina sola, su richiesta, solo controlli passivi), ma è un'interpretazione nostra: le linee guida non definiscono i due termini.
+- **Decisione (2026-11-25): piano Hobby.** Per restare nell'uso personale e non commerciale, il report non invita a proporre lavori: al posto di "Contattami" c'è una firma neutra, "Un progetto di Yuri Impellizzeri", con link al portfolio. Si passa a Pro quando YuSure diventa uno strumento di vendita, e solo allora torna un invito esplicito.
+- **Durata massima delle funzioni:** su Hobby 300 secondi, predefinita e massima. Fonti: [piano Hobby](https://vercel.com/docs/plans/hobby) e [limiti](https://vercel.com/docs/limits).
+
+### Neon, piano Free
+
+- **Nessuna pausa del progetto.** Il compute si sospende dopo 5 minuti senza query, sul piano Free non si può disattivare, e si riattiva da solo alla query successiva "within a few hundred milliseconds". La documentazione non dà numeri più precisi. Fonte: [Scale to zero](https://neon.com/docs/introduction/scale-to-zero), aggiornata il 2026-11-04.
+- **Inattività.** Le FAQ dei prezzi dicono che Neon non mette in pausa i progetti Free per inattività e che non c'è un passo di ripristino. Nessuna pagina letta prevede la cancellazione per inattività dei progetti Free su AWS (la regola dei 90 giorni riguarda solo le regioni Azure dismesse). Fonti: [prezzi](https://neon.com/pricing), aggiornata il 2026-11-04; [regioni](https://neon.com/docs/introduction/regions), aggiornata il 2026-11-21.
+- **Limiti.** 100 CU-ore al mese per progetto (circa 400 ore a 0,25 CU), 1 GB di spazio per progetto, 5 GB di traffico in uscita al mese, 10 branch per progetto. Oltre le CU-ore o il traffico il compute resta sospeso fino al mese successivo; oltre lo spazio falliscono le scritture. Nessun limite cancella i dati. Fonte: [piani](https://neon.com/docs/introduction/plans), aggiornata il 2026-11-24.
+- **Regione.** Francoforte è disponibile (`aws-eu-central-1`); la regione non si cambia dopo la creazione. Fonte: [regioni](https://neon.com/docs/introduction/regions).
+- **Connessione.** Dalle funzioni serverless la stringa con pooling (host con `-pooler`); per le migrazioni la connessione diretta. Fonte: [connection pooling](https://neon.com/docs/connect/connection-pooling), aggiornata il 2026-11-14.
+- **Conseguenza per YuSure:** un report aperto dopo un periodo senza traffico paga qualche centinaio di millisecondi di riattivazione, ma il link funziona sempre. Il rischio da tenere d'occhio è il tetto di CU-ore: il tetto globale di scansioni (M5) e la sospensione dopo 5 minuti lo tengono basso.
+
+### Vercel, cron sul piano Hobby
+
+- Una volta al giorno al massimo, con precisione di un'ora (±59 minuti), in UTC, solo sui deploy di produzione; nessun nuovo tentativo se fallisce. L'endpoint si protegge con `CRON_SECRET`, inviato da Vercel nell'header `Authorization: Bearer …`. I cron sono indicati come funzione "legacy" che verrà migrata a Schedules. Fonti: [Cron Jobs](https://vercel.com/docs/cron-jobs), aggiornata il 2026-09-16; [uso e prezzi](https://vercel.com/docs/cron-jobs/usage-and-pricing), aggiornata il 2026-07-15; [gestione](https://vercel.com/docs/cron-jobs/manage-cron-jobs), aggiornata il 2026-08-11.
+- **Conseguenza:** quando non arrivano scansioni, la cancellazione dipende solo dal cron, che passa una volta al giorno con un'ora di tolleranza. Per questo la promessa è "entro 48 ore" e non "dopo 24 ore". **Vincolo per M3:** con una soglia di 24 ore il caso peggiore è circa 49 ore (24 di vita, fino a 24 ore e 59 minuti tra due passaggi del cron), quindi la soglia di cancellazione va scelta più bassa, in modo che la promessa delle 48 ore valga sempre.
+
+## Verifiche M0: `after()` e durata delle funzioni
+
+Verificate il 2026-11-25 sulla documentazione di Next.js 16.4.6 installata e su quella di Vercel. Non ancora provate su un deploy reale: la prova è in M5, quando `after()` si usa davvero.
+
+- **`after()` è stabile** da Next.js 15.1 e non rende dinamica la route. Gira "for the platform's default or configured max duration of your route", configurabile con `maxDuration` nella configurazione del segmento. Fonte: `node_modules/next/dist/docs/01-app/03-api-reference/04-functions/after.md`.
+- **Su Vercel `after()` si appoggia a `waitUntil`**: il lavoro continua dopo la risposta, ma con lo stesso limite di tempo della funzione, e se la funzione supera il limite viene interrotto. Il limite conta dall'arrivo della richiesta e comprende anche il lavoro dopo la risposta. Vercel consiglia `after()` a chi usa Next.js 15.1 o successivi. Fonte: [pacchetto @vercel/functions](https://vercel.com/docs/functions/functions-api-reference/vercel-functions-package), aggiornata il 2026-09-03.
+- **Durata massima su Hobby, con Fluid compute (predefinito):** 300 secondi, sia come valore predefinito sia come massimo. Fonte: [durata delle funzioni](https://vercel.com/docs/functions/configuring-functions/duration), aggiornata il 2026-08-24.
+- **Conseguenze per YuSure:**
+  - controlli propri e chiamata a PageSpeed (spesso 10–30 secondi) stanno insieme ben dentro i 300 secondi della stessa richiesta: l'esecuzione in due tempi descritta sopra resta valida su Hobby;
+  - in M5 si imposta `maxDuration` in modo esplicito sulla route di scansione, così il limite è scritto nel codice e non dipende dal piano;
+  - con `cacheComponents` attivo, dentro `after()` chiamato da un Server Component non si possono usare `cookies()` o `headers()`: la scansione parte da un Route Handler o da una Server Function, dove sono permessi.
