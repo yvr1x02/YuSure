@@ -47,14 +47,20 @@ Cosa controlla YuSure, cosa **non** fa (niente test attivi, niente accessi, nien
 
 Il peso di ogni controllo e le soglie stanno nel catalogo dei controlli nel codice; qui c'è l'elenco e la gravità predefinita.
 
+Regole comuni (decise in M1):
+
+- **Quale versione si analizza.** Sempre `https://` più il percorso inserito, anche se l'indirizzo è scritto con `http://`; `http://` serve al controllo del redirect. Se `https` non risponde o il certificato non è valido, i controlli sulla pagina (header, HTML) usano la versione `http://` e il report lo dice in una nota. "Non verificato" solo se non risponde nessuna delle due.
+- **Ogni difetto si conta una volta.** Un certificato non valido o scaduto è un problema solo per "Certificato valido": "Il sito risponde in HTTPS" resta ok e la scadenza non si valuta. Se la porta 443 è chiusa, il problema è di "Il sito risponde in HTTPS" e i controlli sul certificato risultano non verificati.
+- **Tempo massimo.** Ogni richiesta ha 10 secondi (ADR-0002) e la scansione intera 30: allo scadere, i controlli non finiti risultano "non verificato" con il motivo.
+
 ### Sicurezza
 
 | Controllo | Come | Gravità se manca |
 |---|---|---|
-| Il sito risponde in HTTPS | Richiesta a `https://` | Problema |
-| Da `http://` si arriva a `https://` | Richiesta a `http://` senza seguire i redirect: 301/308 (o 302/307) verso `https://` | Problema |
+| Il sito risponde in HTTPS | Richiesta a `https://`: basta una risposta, anche con un certificato rifiutato. Porta 443 che rifiuta la connessione: problema | Problema |
+| Da `http://` si arriva a `https://` | Richiesta a `http://`; i redirect si seguono uno alla volta finché restano su `http://`, al massimo 5: ok se la catena arriva a `https://` con 301/308 (o 302/307). Porta 80 che rifiuta la connessione: attenzione; nessuna risposta entro il tempo: non verificato | Problema |
 | Certificato valido | Connessione TLS: emesso per il dominio, non scaduto | Problema |
-| Scadenza del certificato | Meno di 14 giorni: attenzione | Attenzione |
+| Scadenza del certificato | Meno di 14 giorni: attenzione. Già scaduto: conta solo in "Certificato valido" | Attenzione |
 | Nessun contenuto misto | Nell'HTML di una pagina `https`, risorse caricate da `http://` | Problema per script e stili, attenzione per immagini |
 | `Strict-Transport-Security` | Header presente, `max-age` di almeno 6 mesi | Attenzione |
 | `Content-Security-Policy` | Header presente | Consigliato |
