@@ -6,9 +6,9 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - ogni nuova pagina entra nel controllo di accessibilità con axe (WCAG 2.2 AA) nello stesso commit che la aggiunge;
 - ogni controllo nuovo ha test unitari sui casi ok, attenzione, problema e non verificato.
 
-**Milestone attiva:** M0
+**Milestone attiva:** M1
 
-## M0 — Fondamenta
+## M0 — Fondamenta (completata il 2026-11-25)
 
 - Progetto Next.js con TypeScript, Tailwind CSS v4 e lint (ADR-0001). Nome del pacchetto `yusure`.
 - Vitest e Playwright configurati, con un test di esempio ciascuno e il controllo axe.
@@ -20,7 +20,8 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Comandi compilati nel `CLAUDE.md`.
 
 **Da verificare dopo il merge di M0:**
-- L'indirizzo di produzione è pubblico, raggiungibile senza accesso a Vercel. Le anteprime protette vanno bene, la produzione no.
+- L'indirizzo di produzione è pubblico, raggiungibile senza accesso a Vercel. Le anteprime protette vanno bene, la produzione no. *Verificato il 2026-11-25 dopo il merge della PR #1: `https://yusure.vercel.app/` e `/come-funziona` rispondono senza accesso; l'anteprima di `m0` rimanda al login.*
+- Il deploy di produzione usa Node 22: la PR #1 è stata costruita con `engines.node` `>=22.12.0`, cioè con l'ultima versione disponibile; `22.x` arriva con la seconda PR di M0.
 
 ## M1 — Richieste sicure e primi controlli
 
@@ -62,6 +63,8 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Revisione dell'aspetto di Home, Report e Come funziona rispetto a `docs/DESIGN.md`.
 - Stati di caricamento, errori e casi limite curati.
 - Firma "Un progetto di Yuri Impellizzeri" in fondo al report, con link al portfolio, senza invito a proporre lavori (ADR-0003).
+- Nuova palette, da decidere insieme partendo dai colori di stato; poi aggiornare `docs/DESIGN.md`.
+- Sfondo dinamico a tutta pagina con codice che si scrive: in Home gli header di risposta reali di YuSure; durante la scansione le richieste e le risposte del sito analizzato; nel report si ferma o resta appena visibile. Vincoli: pulsante di pausa (WCAG 2.2.2), fermo con `prefers-reduced-motion`, contrasto del testo misurato con lo sfondo attivo, prestazioni misurate con la CPU rallentata 4×. Cambia la direzione visiva approvata (`docs/DESIGN.md`, "Movimento"): va aggiornata prima di scriverlo.
 
 ## M7 — Rifinitura
 
