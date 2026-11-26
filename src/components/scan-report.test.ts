@@ -2,6 +2,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
+import { CATALOG_VERSION } from "@/lib/checks/catalog";
 import type { ScanReport as Report } from "@/lib/checks/scan";
 import { scoresOf } from "@/lib/checks/score";
 
@@ -81,6 +82,14 @@ describe("ScanReport", () => {
     );
     expect(saved).toContain("42");
     expect(saved).not.toContain("71");
+  });
+
+  it("says when the report was made with an older catalog of checks", () => {
+    const older = renderToStaticMarkup(
+      createElement(ScanReport, { report, scores: scoresOf(report.results), catalogVersion: CATALOG_VERSION - 1 }),
+    );
+    expect(older).toContain("versione precedente dei controlli");
+    expect(text).not.toContain("versione precedente dei controlli");
   });
 
   it("keeps technical details in a native disclosure", () => {

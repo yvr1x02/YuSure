@@ -42,7 +42,7 @@ async function Report({ params }: Pick<PageProps<"/report/[id]">, "params">) {
       )}
     </div>
   );
-  return <ScanReport report={saved.report} scores={saved.scores} actions={actions} />;
+  return <ScanReport report={saved.report} scores={saved.scores} catalogVersion={saved.catalogVersion} actions={actions} />;
 }
 
 /** The report, and when it can be scanned again if the 24-hour cache still holds it (ADR-0003). */

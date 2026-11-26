@@ -10,7 +10,7 @@ import { pool } from "@/lib/db";
 /** 16 random bytes in base64url: the report's link, not guessable (ADR-0003). */
 const REPORT_ID = /^[A-Za-z0-9_-]{22}$/;
 
-export type SavedScan = { id: string; report: ScanReport; scores: Scores };
+export type SavedScan = { id: string; report: ScanReport; scores: Scores; catalogVersion: number };
 
 type ChecksColumn = { catalogVersion: number; readOverHttp?: string; results: CheckResult[] };
 
@@ -57,5 +57,6 @@ export async function findScan(id: string): Promise<SavedScan | undefined> {
       results: row.checks.results,
     },
     scores: row.scores,
+    catalogVersion: row.checks.catalogVersion,
   };
 }

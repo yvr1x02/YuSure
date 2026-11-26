@@ -386,6 +386,8 @@ export const REPORT_TEXTS = {
   rescan: "Rifai la scansione",
   rescanPending: "Analisi in corso: può richiedere fino a 30 secondi.",
   rescanLater: "Questo report ha meno di 24 ore: potrai rifare la scansione dal {date}.",
+  olderCatalog:
+    "Questo report è stato fatto con una versione precedente dei controlli: alcuni controlli che YuSure fa oggi allora non c'erano.",
 };
 
 /** Shown above the results when the page checks used the http version (SPEC, regole comuni). */

@@ -5,7 +5,9 @@ import {
   ERROR_MESSAGES,
   fillText,
   OUTCOME_LABELS,
+  CATALOG_VERSION,
   READ_OVER_HTTP_NOTE,
+  REPORT_TEXTS,
   SCORE_TEXTS,
   SECTION_LABELS,
   VERDICT_LABELS,
@@ -31,7 +33,18 @@ const scannedAtFormat = new Intl.DateTimeFormat("it-IT", {
 });
 
 /** The report page's content. Scores come saved with the report; texts from the catalog (ADR-0003). */
-export function ScanReport({ report, scores, actions }: { report: Report; scores: Scores; actions?: ReactNode }) {
+export function ScanReport({
+  report,
+  scores,
+  catalogVersion = CATALOG_VERSION,
+  actions,
+}: {
+  report: Report;
+  scores: Scores;
+  /** Of the saved report: an older one lacks checks added since (ADR-0003). */
+  catalogVersion?: number;
+  actions?: ReactNode;
+}) {
   const url = new URL(report.url);
   const urgent = report.results
     .filter((r) => r.outcome === "problem")
@@ -50,6 +63,7 @@ export function ScanReport({ report, scores, actions }: { report: Report; scores
           <span className="break-all">{report.url}</span>
         </p>
         {report.readOverHttp && <p className="mt-2 max-w-text">{READ_OVER_HTTP_NOTE}</p>}
+        {catalogVersion < CATALOG_VERSION && <p className="mt-2 max-w-text">{REPORT_TEXTS.olderCatalog}</p>}
       </div>
       {actions}
       {urgent.length > 0 && (
