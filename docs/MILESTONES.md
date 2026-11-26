@@ -59,6 +59,11 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Limite per IP e tetto globale, IP come hash con sale.
 - Cancellazione degli hash scaduti a ogni scansione, più il cron giornaliero come rete di sicurezza: cancellazione entro 48 ore (ADR-0003).
 - Accendere le scansioni in produzione: `SCAN_ENABLED=true` per Production su Vercel e nuovo deploy, solo dopo che limite per IP e tetto globale sono attivi e verificati.
+- Decisioni del 2026-11-26, all'avvio di M3:
+  - Connessione chiusa dal sito prima di qualsiasi risposta https (`connection_reset`): "Il sito risponde in HTTPS" è un problema se http sullo stesso host risponde, altrimenti non verificato; il timeout resta non verificato (SPEC).
+  - La regola ESLint su cheerio e undici copre anche gli `import()` dinamici.
+  - SPEC: sezione "Limiti noti", con gli `url(http://…)` nel CSS.
+  - Header di sicurezza di YuSure in `next.config.ts`: `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`. La CSP (con nonce dal proxy o senza) è da decidere.
 
 ## M4 — SEO e accessibilità dall'HTML
 
