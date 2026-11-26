@@ -17,7 +17,7 @@ export type CheckDefinition = {
   label: string;
   /** Outcome when the check fails, from the SPEC table. */
   severity: "warning" | "problem";
-  /** Points taken from the section score; the formula arrives in M2. */
+  /** Points lost on a problem; a warning loses half (score.ts). Security weights add up to 100. */
   weight: number;
   texts: Partial<Record<Exclude<Outcome, "unverified">, Texts>>;
   /** "Dettagli tecnici": what a passing site shows. */
@@ -30,7 +30,7 @@ export const CHECKS = {
     section: "security",
     label: "Connessione protetta (https)",
     severity: "problem",
-    weight: 30,
+    weight: 25,
     texts: {
       ok: {
         headline: "Il sito risponde in https",
@@ -50,7 +50,7 @@ export const CHECKS = {
     section: "security",
     label: "Passaggio da http a https",
     severity: "problem",
-    weight: 15,
+    weight: 12,
     texts: {
       ok: {
         headline: "Chi scrive l'indirizzo senza https arriva comunque alla versione protetta",
@@ -74,7 +74,7 @@ export const CHECKS = {
     section: "security",
     label: "Certificato di sicurezza",
     severity: "problem",
-    weight: 25,
+    weight: 20,
     texts: {
       ok: {
         headline: "Il certificato di sicurezza è valido",
@@ -94,7 +94,7 @@ export const CHECKS = {
     section: "security",
     label: "Scadenza del certificato",
     severity: "warning",
-    weight: 5,
+    weight: 4,
     texts: {
       ok: {
         headline: "Il certificato scade il {date}",
@@ -109,6 +109,196 @@ export const CHECKS = {
     expected: "Almeno 14 giorni alla scadenza",
     docs: "https://web.dev/articles/why-https-matters",
   },
+
+  mixedContent: {
+    section: "security",
+    label: "Contenuti caricati senza protezione",
+    severity: "problem",
+    weight: 10,
+    texts: {
+      ok: {
+        headline: "La pagina carica tutto in modo protetto",
+        explanation: "Script, stili e immagini arrivano tutti in https: il lucchetto del browser resta intatto.",
+      },
+      warning: {
+        headline: "Alcune immagini o video arrivano senza protezione",
+        explanation:
+          "La pagina è protetta, ma alcuni elementi (immagini, video, icone) vengono caricati senza https. Il browser prova a caricarli in modo protetto e, se non ci riesce, non li mostra.",
+      },
+      problem: {
+        headline: "Script o stili della pagina arrivano senza protezione",
+        explanation:
+          "Il browser li blocca, quindi parti del sito possono apparire rotte o smettere di funzionare. Vanno caricati in https.",
+      },
+    },
+    expected: "Nell'HTML di una pagina https, nessuna risorsa caricata da http://",
+    docs: "https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Mixed_content",
+  },
+
+  hsts: {
+    section: "security",
+    label: "Accesso sempre protetto (HSTS)",
+    severity: "warning",
+    weight: 7,
+    texts: {
+      ok: {
+        headline: "Il browser ricorda di aprire il sito solo in https",
+        explanation:
+          "Dopo la prima visita il browser non passa più dalla versione non protetta, nemmeno se qualcuno scrive l'indirizzo senza https.",
+      },
+      warning: {
+        headline: "Il browser non sa di dover usare sempre https",
+        explanation:
+          "Manca l'istruzione che dice al browser di aprire il sito sempre in modo protetto, oppure vale meno di 6 mesi. Si aggiunge con una riga nella configurazione del server.",
+      },
+    },
+    expected: "Strict-Transport-Security con max-age di almeno 15768000 secondi (6 mesi)",
+    docs: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Strict-Transport-Security",
+  },
+
+  csp: {
+    section: "security",
+    label: "Regole sui contenuti (CSP)",
+    severity: "warning",
+    weight: 2,
+    texts: {
+      ok: {
+        headline: "Il sito dichiara da dove si possono caricare i contenuti",
+        explanation: "Una Content Security Policy limita i danni se qualcuno riesce a inserire codice nelle pagine.",
+      },
+      warning: {
+        headline: "Il sito non dichiara da dove si possono caricare i contenuti",
+        explanation:
+          "È una protezione in più contro l'inserimento di codice malevolo. Su un piccolo sito è normale non averla: è un consiglio, non un'urgenza.",
+      },
+    },
+    expected: 'Un header Content-Security-Policy, oppure un tag <meta http-equiv="Content-Security-Policy">',
+    docs: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CSP",
+  },
+
+  clickjacking: {
+    section: "security",
+    label: "Protezione dal clickjacking",
+    severity: "warning",
+    weight: 6,
+    texts: {
+      ok: {
+        headline: "Il sito non può essere mostrato dentro altri siti",
+        explanation:
+          "Nessuno può nascondere le pagine del sito dentro una pagina propria per ingannare i visitatori e farli cliccare dove non vogliono.",
+      },
+      warning: {
+        headline: "Il sito può essere mostrato dentro altri siti",
+        explanation:
+          "Un sito malevolo potrebbe incorporare queste pagine e ingannare i visitatori, facendoli cliccare dove non vogliono. Si evita con una riga nella configurazione del server.",
+      },
+    },
+    expected:
+      "X-Frame-Options: DENY o SAMEORIGIN, oppure frame-ancestors nell'header Content-Security-Policy (nel tag <meta> non vale)",
+    docs: "https://developer.mozilla.org/en-US/docs/Web/Security/Attacks/Clickjacking",
+  },
+
+  nosniff: {
+    section: "security",
+    label: "Tipo dei file dichiarato (nosniff)",
+    severity: "warning",
+    weight: 2,
+    texts: {
+      ok: {
+        headline: "Il browser usa i file solo per quello che sono",
+        explanation: "Un file presentato come immagine non può essere eseguito come codice.",
+      },
+      warning: {
+        headline: "Il browser potrebbe indovinare il tipo dei file",
+        explanation:
+          "Senza questa istruzione, un file caricato come immagine potrebbe essere trattato come codice. È un consiglio: si aggiunge con una riga nella configurazione del server.",
+      },
+    },
+    expected: "X-Content-Type-Options: nosniff",
+    docs: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/X-Content-Type-Options",
+  },
+
+  referrerPolicy: {
+    section: "security",
+    label: "Informazioni passate agli altri siti (Referrer-Policy)",
+    severity: "warning",
+    weight: 1,
+    texts: {
+      ok: {
+        headline: "Il sito decide cosa dire agli altri siti",
+        explanation:
+          "Quando un visitatore segue un link esterno, il sito sceglie quanta parte dell'indirizzo di provenienza condividere.",
+      },
+      warning: {
+        headline: "Il sito non decide cosa dire agli altri siti",
+        explanation:
+          "Il browser usa la sua regola predefinita, che di solito va bene. Dichiararla è un consiglio, utile se gli indirizzi delle pagine contengono dati dei visitatori.",
+      },
+    },
+    expected: "Un header Referrer-Policy, per esempio strict-origin-when-cross-origin",
+    docs: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Referrer-Policy",
+  },
+
+  permissionsPolicy: {
+    section: "security",
+    label: "Permessi del browser (Permissions-Policy)",
+    severity: "warning",
+    weight: 1,
+    texts: {
+      ok: {
+        headline: "Il sito dichiara quali funzioni del browser usa",
+        explanation:
+          "Fotocamera, microfono, posizione: il sito dice quali servono e quali no, anche per i contenuti incorporati.",
+      },
+      warning: {
+        headline: "Il sito non dichiara quali funzioni del browser usa",
+        explanation:
+          "È un consiglio: limitare fotocamera, microfono e posizione a chi ne ha bisogno riduce i rischi dei contenuti esterni, come mappe o video incorporati.",
+      },
+    },
+    expected: "Un header Permissions-Policy, per esempio camera=(), microphone=(), geolocation=()",
+    docs: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Permissions-Policy",
+  },
+
+  cookies: {
+    section: "security",
+    label: "Cookie",
+    severity: "warning",
+    weight: 6,
+    texts: {
+      ok: {
+        headline: "Nessun cookie impostato senza protezioni",
+        explanation: "I cookie che la pagina imposta, se ce ne sono, hanno tutte le protezioni consigliate.",
+      },
+      warning: {
+        headline: "Alcuni cookie non hanno tutte le protezioni",
+        explanation:
+          "Possono viaggiare senza cifratura, essere letti da script o partire verso altri siti. Di solito si sistema nelle impostazioni del sito o del plugin che li crea.",
+      },
+    },
+    expected: "Ogni Set-Cookie con Secure, HttpOnly e SameSite",
+    docs: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Set-Cookie",
+  },
+
+  exposedVersions: {
+    section: "security",
+    label: "Versioni del software",
+    severity: "warning",
+    weight: 4,
+    texts: {
+      ok: {
+        headline: "Il server non dichiara le versioni del software",
+        explanation: "Chi cerca siti con programmi vecchi e vulnerabili non trova indizi nelle risposte del sito.",
+      },
+      warning: {
+        headline: "Il server dichiara la versione del software che usa",
+        explanation:
+          "È un indizio utile a chi cerca siti con programmi vecchi da attaccare. Si nasconde con un'impostazione del server; conviene comunque tenere il software aggiornato.",
+      },
+    },
+    expected: "Server e X-Powered-By assenti o senza numeri di versione",
+    docs: "https://developer.mozilla.org/en-US/docs/Web/HTTP/Reference/Headers/Server",
+  },
 } as const satisfies Record<string, CheckDefinition>;
 
 export type CheckId = keyof typeof CHECKS;
@@ -120,7 +310,13 @@ export const OUTCOME_LABELS: Record<Outcome, string> = {
   unverified: "Non verificato",
 };
 
-export type ReasonCode = SafeRequestErrorCode | "no_https" | "certificate_expired";
+export type ReasonCode =
+  | SafeRequestErrorCode
+  | "no_https"
+  | "certificate_expired"
+  | "read_over_http"
+  | "page_unreachable"
+  | "not_html";
 
 /** Shown in the form when the scan cannot start, and as the reason of "non verificato". */
 export const ERROR_MESSAGES: Record<ReasonCode | "empty_address" | "scan_disabled", string> = {
@@ -141,7 +337,15 @@ export const ERROR_MESSAGES: Record<ReasonCode | "empty_address" | "scan_disable
   scan_deadline: "La scansione ha superato i 30 secondi e si è fermata prima di questo controllo.",
   no_https: "Il sito non risponde in https, quindi non c'è un certificato da controllare.",
   certificate_expired: "Il certificato è già scaduto: lo segnala il controllo sul certificato di sicurezza.",
+  read_over_http:
+    "La pagina si è potuta leggere solo senza https, e questo controllo vale solo per la versione protetta. La mancanza di https è già segnalata sopra.",
+  page_unreachable: "Non è stato possibile leggere la pagina, né in https né in http.",
+  not_html: "L'indirizzo non porta a una pagina web (HTML), quindi non ci sono contenuti da controllare.",
 };
+
+/** Shown above the results when the page checks used the http version (SPEC, regole comuni). */
+export const READ_OVER_HTTP_NOTE =
+  "La versione https della pagina non si è potuta leggere: i controlli sulla pagina (header, cookie e contenuti) usano la versione http.";
 
 /** Fills {name} placeholders; a missing value is left visible rather than hidden. */
 export function fillText(text: string, values: Record<string, string> = {}): string {

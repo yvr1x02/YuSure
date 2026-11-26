@@ -74,6 +74,17 @@ describe("traceHttpRedirects", () => {
     const trace = await traceHttpRedirects(new URL("https://esempio.it/"), request);
     expect(trace.hops.map((hop) => hop.status)).toEqual([301, 302]);
     expect(trace.error).toBeUndefined();
+    expect(trace.page).toBeUndefined();
+  });
+
+  it("keeps the page when the chain ends on http", async () => {
+    const page = response("http://www.esempio.it/", 200);
+    const request = site({
+      "http://esempio.it/": response("http://esempio.it/", 301, { location: "http://www.esempio.it/" }),
+      "http://www.esempio.it/": page,
+    });
+    const trace = await traceHttpRedirects(new URL("https://esempio.it/"), request);
+    expect(trace.page).toBe(page);
   });
 
   it("gives up after 5 redirects on http", async () => {
