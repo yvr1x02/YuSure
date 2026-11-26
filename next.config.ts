@@ -38,7 +38,11 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   /* config options here */
   async headers() {
-    return [{ source: "/:path*", headers: securityHeaders }];
+    return [
+      { source: "/:path*", headers: securityHeaders },
+      // Reports are shared by link, never indexed (decided in M3); the page also has the meta tag.
+      { source: "/report/:path*", headers: [{ key: "X-Robots-Tag", value: "noindex" }] },
+    ];
   },
   cacheComponents: true,
   partialPrefetching: true,

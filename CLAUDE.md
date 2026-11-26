@@ -32,5 +32,6 @@ Node 22 (`engines.node` è `22.x`: su Vercel decide la versione, ADR-0001). Le v
 | `npm run build` | build di produzione |
 | `npm run lint` | ESLint |
 | `npm run typecheck` | genera i tipi delle route e controlla TypeScript |
-| `npm test` | test unitari con Vitest (`src/**/*.test.ts`) |
-| `npm run test:e2e` | build, avvio sulla porta 3100 e test Playwright con axe (`e2e/`); la prima volta serve `npx playwright install chromium` |
+| `npm test` | test unitari con Vitest (`src/**/*.test.ts`); quelli sul database solo con `TEST_DATABASE_URL` (README, "Postgres per i test") |
+| `npm run test:e2e` | build, avvio sulla porta 3100 e test Playwright con axe (`e2e/`); serve `TEST_DATABASE_URL`, e la prima volta `npx playwright install chromium` |
+| `npm run db:migrate` | applica le migrazioni di `migrations/` a `DATABASE_URL_UNPOOLED` (da `.env.local`) |

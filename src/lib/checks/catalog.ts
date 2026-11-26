@@ -305,6 +305,9 @@ export const CHECKS = {
 
 export type CheckId = keyof typeof CHECKS;
 
+/** Saved with every report (ADR-0003). Raise it when a check starts measuring something different. */
+export const CATALOG_VERSION = 1;
+
 export const OUTCOME_LABELS: Record<Outcome, string> = {
   ok: "Ok",
   warning: "Attenzione",
@@ -321,9 +324,15 @@ export type ReasonCode =
   | "not_html";
 
 /** Shown in the form when the scan cannot start, and as the reason of "non verificato". */
-export const ERROR_MESSAGES: Record<ReasonCode | "empty_address" | "scan_disabled", string> = {
+export const ERROR_MESSAGES: Record<
+  ReasonCode | "empty_address" | "scan_disabled" | "scan_unavailable" | "ip_limit" | "daily_limit",
+  string
+> = {
   empty_address: "Scrivi l'indirizzo di un sito, per esempio trattoriadamario.it.",
   scan_disabled: "YuSure è in costruzione: le scansioni arrivano a breve.",
+  scan_unavailable: "In questo momento YuSure non riesce ad analizzare siti. Riprova tra qualche minuto.",
+  ip_limit: "Hai raggiunto il numero massimo di analisi per un'ora: puoi farne un'altra tra poco.",
+  daily_limit: "YuSure ha raggiunto il numero massimo di analisi per oggi. Riprova più tardi.",
   invalid_url: "Questo indirizzo non sembra valido. Prova a scriverlo così: trattoriadamario.it",
   not_allowed: "Questo indirizzo non si può analizzare: YuSure apre solo pagine web normali, senza porte particolari né password nell'indirizzo.",
   not_public: "Questo indirizzo non è un sito pubblico.",
@@ -364,6 +373,19 @@ export const SCORE_TEXTS = {
   partial: "Punteggio parziale: i controlli non verificati non sono contati.",
   unavailable:
     "Punteggio non disponibile: troppi controlli non si sono potuti eseguire ({unverified} su {checks}) per dare un voto affidabile.",
+};
+
+/** The report page around the results (SPEC, "Report"). */
+export const REPORT_TEXTS = {
+  loading: "Caricamento del report…",
+  notFoundTitle: "Report non trovato",
+  notFound: "Questo link non porta a nessun report. Controlla di averlo copiato per intero.",
+  copyLink: "Copia link",
+  copied: "Link copiato.",
+  copyFailed: "Non è stato possibile copiare il link: copialo dalla barra degli indirizzi.",
+  rescan: "Rifai la scansione",
+  rescanPending: "Analisi in corso: può richiedere fino a 30 secondi.",
+  rescanLater: "Questo report ha meno di 24 ore: potrai rifare la scansione dal {date}.",
 };
 
 /** Shown above the results when the page checks used the http version (SPEC, regole comuni). */

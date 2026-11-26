@@ -6,6 +6,7 @@ const baseURL = `http://localhost:${port}`;
 
 export default defineConfig({
   testDir: "./e2e",
+  globalSetup: "./e2e/global-setup.ts",
   forbidOnly: !!process.env.CI,
   use: { baseURL },
   projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
@@ -14,8 +15,12 @@ export default defineConfig({
     command: `npm run build && npm run start -- --port ${port}`,
     url: baseURL,
     reuseExistingServer: false,
-    // The e2e tests drive the scan form: scans on for this build.
-    env: { SCAN_ENABLED: "true" },
+    // The e2e tests drive the scan form: scans on for this build, against the test database (never .env.local's).
+    env: {
+      SCAN_ENABLED: "true",
+      DATABASE_URL: process.env.TEST_DATABASE_URL ?? "",
+      IP_HASH_SECRET: "e2e-only",
+    },
     timeout: 120_000,
   },
 });

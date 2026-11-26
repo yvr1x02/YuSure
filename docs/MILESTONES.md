@@ -6,7 +6,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - ogni nuova pagina entra nel controllo di accessibilità con axe (WCAG 2.2 AA) nello stesso commit che la aggiunge;
 - ogni controllo nuovo ha test unitari sui casi ok, attenzione, problema e non verificato.
 
-**Milestone attiva:** M3
+**Milestone attiva:** M4
 
 ## M0 — Fondamenta (completata il 2026-11-25)
 
@@ -35,7 +35,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 
 **Da verificare dopo il merge di M1:**
 - In produzione la Home mostra "YuSure è in costruzione" senza il form, e la Server Action rifiuta le richieste: `SCAN_ENABLED` non è impostata per Production. *Verificato il 2026-11-26: il deploy di produzione è quello della merge della PR #5 (`494d09b`); `https://yusure.vercel.app/` ha la frase "in costruzione" e nessun `<form>` né `<input>`; una chiamata diretta alla Server Action `scan` (ID letto dal JavaScript pubblico) con `example.com` risponde `{"status":"error","message":"YuSure è in costruzione: le scansioni arrivano a breve."}`.*
-- In anteprima, con `SCAN_ENABLED=true` per Preview, una scansione vera da Vercel (fra1) completa i quattro controlli.
+- In anteprima, con `SCAN_ENABLED=true` per Preview, una scansione vera da Vercel (fra1) completa i quattro controlli. *Parziale il 2026-11-26: sull'anteprima di `8a08417` l'utente ha completato una scansione fino al report (link `#check-httpRedirect` del riepilogo "Da sistemare subito"); il dettaglio dei singoli controlli non è stato registrato.*
 
 ## M2 — Sicurezza completa e punteggio (completata il 2026-11-26)
 
@@ -47,13 +47,13 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Istruzioni per impostare la protezione di `main` (si entra solo con una PR e i controlli verdi); la imposta l'utente su GitHub.
 
 **Da verificare dopo il merge di M2:**
-- La CI parte sul push in `main` della merge e finisce verde.
-- Protezione di `main` impostata seguendo il README: un `git push` diretto su `main` viene rifiutato.
-- In produzione la Home resta "in costruzione" e la Server Action rifiuta le richieste (`SCAN_ENABLED` spenta fino a M3).
+- La CI parte sul push in `main` della merge e finisce verde. *Verificato il 2026-11-26: run del push di `5cf113a` (merge della PR #6) verde, job `checks` in 60 s.*
+- Protezione di `main` impostata seguendo il README: un `git push` diretto su `main` viene rifiutato. *Verificato il 2026-11-26 dalle API, non con un push: ruleset `main` (id 28153949) creato via API secondo il README, enforcement `active`, bypass list vuota; `GET rules/branches/main` restituisce `deletion`, `pull_request` (0 approvazioni), `required_status_checks` (`checks` da GitHub Actions, branch aggiornato) e `non_fast_forward`, con `current_user_can_bypass: never`. Il push diretto non è stato provato, per non rischiare di modificare `main`.*
+- In produzione la Home resta "in costruzione" e la Server Action rifiuta le richieste (`SCAN_ENABLED` spenta fino a M3). *Verificato il 2026-11-26 sul deploy di `5cf113a`: frase "in costruzione", nessun `<form>` né `<input>`; la Server Action `scan`, chiamata direttamente con `example.com`, risponde "YuSure è in costruzione: le scansioni arrivano a breve."*
 
-## M3 — Salvataggio, link e limiti
+## M3 — Salvataggio, link e limiti (completata il 2026-11-26)
 
-- Driver Postgres approvato: `pg`, `@types/pg` e `@vercel/functions` (ADR-0001), con una prova sui tempi di avvio a freddo prima della scelta definitiva.
+- Driver Postgres: `pg`, `@types/pg` e `@vercel/functions` (ADR-0001). La prova di avvio a freddo non è stata completata; la scelta segue le raccomandazioni di Neon e Vercel per Fluid compute.
 - Tabelle `scans` e `scan_requests` con migrazioni (ADR-0003).
 - Pagina `/report/[id]`, "Copia link", cache di 24 ore e "Rifai la scansione".
 - Limite per IP e tetto globale, IP come hash con sale.
@@ -62,9 +62,35 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Decisioni del 2026-11-26, all'avvio di M3:
   - Connessione chiusa dal sito prima di qualsiasi risposta https (`connection_reset`): "Il sito risponde in HTTPS" è un problema se http sullo stesso host risponde, altrimenti non verificato; il timeout resta non verificato (SPEC).
   - La regola ESLint su cheerio e undici copre anche gli `import()` dinamici.
+  - Database e migrazioni (ADR-0001): SQL a mano con un runner nostro in `.mjs`; un branch Neon per Production, Preview e Development, con `DATABASE_URL` e `DATABASE_URL_UNPOOLED` per ambiente; Postgres in Docker in locale e in CI. Nessuna migrazione prima che l'utente confermi che i branch Neon sono pronti.
+  - Report, cache e limiti (ADR-0003): chiave della cache dominio più percorso; punteggi salvati alla scansione e frasi calcolate alla visualizzazione; 5 all'ora per IP e 100 al giorno in totale, con il limite per IP sotto `pg_advisory_xact_lock`; righe di `scan_requests` cancellate dopo 2 ore; cron protetto da `CRON_SECRET`; `noindex` sui report; `IP_HASH_SECRET` obbligatoria.
   - SPEC: sezione "Limiti noti", con gli `url(http://…)` nel CSS.
   - Header di sicurezza di YuSure in `next.config.ts`: `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` e una CSP fissa, senza nonce (le pagine restano statiche, ADR-0004 non cambia), con la toolbar di Vercel permessa solo in anteprima.
   - Copertura minima del punteggio: se i controlli verificati pesano meno di metà della sezione, niente punteggio né giudizio; stessa regola per il totale (SPEC, "Punteggio").
+
+**Verifiche del 2026-11-26 sulla prima parte di M3 (PR #7, merge `bd99242`):**
+- Anteprima di `8a08417`, prova dell'utente: la toolbar di Vercel si carica e apre i commenti, nessun errore CSP in console, l'header `Content-Security-Policy` è quello previsto per Preview (con `https://vercel.live`).
+- La PR #7, dopo il rebase su `main`, mostra solo i 6 commit di M3 e 18 file; CI verde su `8a08417` (71 s) e sul push in `main` di `bd99242` (64 s).
+- Produzione, deploy di `bd99242`: `/` e `/come-funziona` mandano CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` e `X-Frame-Options`; la CSP non contiene `vercel.live` e la toolbar non c'è; la Home resta "in costruzione" e la Server Action rifiuta le richieste.
+- Branch `m2` e `m3` cancellati dopo il merge, in locale e su GitHub.
+
+**Verifiche del 2026-11-26 sulla seconda parte di M3 (branch `m3`):**
+- In locale, Postgres 18.7 in un container: lint e typecheck puliti; Vitest 378 su 378 con `TEST_DATABASE_URL`, 369 più 9 saltati senza; e2e 25 su 25 (axe sui report e sul 404, `X-Robots-Tag`, Home → report dalla cache, "Copia link"); build con `/report/[id]` in Partial Prerender. Senza `pg_advisory_xact_lock` il test con 8 richieste parallele fallisce: il lock serve e il test lo copre.
+- CI su GitHub (`workflow_dispatch` su `34b111f`, run 45838648130): verde in 82 s, con i test sul database eseguiti sul service Postgres 18 (378 su 378, nessuno saltato).
+- Variabili su Vercel controllate dalle API (nomi, ambiti e tipi, non i valori): `DATABASE_URL`, `DATABASE_URL_UNPOOLED`, `IP_HASH_SECRET` e `CRON_SECRET` Sensitive in Production e Preview; `SCAN_ENABLED=true` per tutti i branch di Preview.
+- Migrazioni (`001_scans.sql`) applicate sui branch Neon dev, preview e production; su ognuno tabelle `scans`, `scan_requests`, `schema_migrations` e i 5 indici, Postgres 18.7; la seconda esecuzione non applica nulla.
+- Anteprima di `34b111f` (fra1, database preview, `SCAN_LIMIT_DAILY=4` temporanea solo per `m3`):
+  - `x-real-ip` e `x-forwarded-for` falsi e diversi a ogni richiesta: tre scansioni, un solo hash (ADR-0003);
+  - report salvato (`example.com/4`: catalogo v1, 13 risultati, punteggio sicurezza 79) e aperto dal link in una sessione nuova, con `X-Robots-Tag: noindex`; un id inesistente mostra "Report non trovato" (200 con `noindex`, ADR-0003);
+  - cache: `http://www.example.com/1/?da=mail` apre il report di `example.com/1`, senza contare la richiesta;
+  - tetto globale: la quinta scansione è rifiutata ("per oggi"), senza salvare né contare;
+  - limite per IP: con il tetto libero, la quinta richiesta passa e la sesta è rifiutata ("per un'ora");
+  - nei log dell'anteprima nessun errore dell'app, solo l'avviso SSL di `pg` (ADR-0001).
+- Pulizia dopo la prova: report e richieste di prova cancellati dal database preview; `SCAN_LIMIT_DAILY`, i due deploy di prova con il link di condivisione e `.env.preview.local` cancellati dall'utente.
+
+**Da verificare dopo il merge di M3:**
+- Produzione con le scansioni ancora spente: Home "in costruzione", `/report/<id inesistente>` con `noindex`, header di sicurezza.
+- Dopo `SCAN_ENABLED=true` in Production e il nuovo deploy: una scansione dell'utente salvata nel database production e la richiesta contata in `scan_requests`.
 
 ## M4 — SEO e accessibilità dall'HTML
 
@@ -96,9 +122,11 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Su alcuni di quei siti, confronto dei risultati con securityheaders.com e PageSpeed Insights, con le differenze spiegate.
 - Miglioramento possibile: CSP di YuSure con un nonce generato da `proxy.ts`, senza `'unsafe-inline'` negli script. Costi: tutte le pagine dinamiche, niente cache CDN per l'HTML, incompatibile con il Partial Prerendering, quindi va rivista ADR-0004.
 - README finale con screenshot, link alla produzione e il racconto della protezione SSRF.
+- `sslmode=verify-full` nelle stringhe di connessione, prima di aggiornare `pg` alla versione maggiore successiva (ADR-0001).
 
 ## Dopo la v1
 
 - Inglese.
 - PDF del report.
 - Confronto con una scansione precedente dello stesso dominio.
+- Passare dai Cron Jobs di Vercel a Vercel Schedules quando escono dalla beta (Vercel definisce i Cron Jobs "legacy").

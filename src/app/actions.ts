@@ -1,19 +1,22 @@
 "use server";
 
-import { ERROR_MESSAGES } from "@/lib/checks/catalog";
-import { runScan, type ScanReport } from "@/lib/checks/scan";
-import { isScanEnabled } from "@/lib/scan-enabled";
-import { inspectCertificate, normalizeAddress, safeRequest, SafeRequestError } from "@/lib/safe-request";
+import { ipAddress } from "@vercel/functions";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
-export type ScanState =
-  | { status: "idle"; address: string }
-  | { status: "error"; address: string; message: string }
-  | { status: "done"; address: string; report: ScanReport };
+import { ERROR_MESSAGES } from "@/lib/checks/catalog";
+import { runScan } from "@/lib/checks/scan";
+import { hashIp, reserveScan } from "@/lib/limits";
+import { inspectCertificate, normalizeAddress, safeRequest, SafeRequestError } from "@/lib/safe-request";
+import { isScanEnabled } from "@/lib/scan-enabled";
+import { findRecentScanId, saveScan } from "@/lib/scans";
+
+export type ScanState = { status: "idle"; address: string } | { status: "error"; address: string; message: string };
 
 // Longer than any address someone types: refused before parsing.
 const MAX_ADDRESS_LENGTH = 2048;
 
-/** Runs a scan and returns the report, without saving anything (M1). */
+/** Opens the report of the address: from the 24-hour cache, or from a new scan within the limits (ADR-0003). */
 export async function scan(_previous: ScanState, formData: FormData): Promise<ScanState> {
   const address = String(formData.get("url") ?? "");
   // Refused before any parsing or network: this endpoint is public even when the form is hidden.
@@ -31,8 +34,39 @@ export async function scan(_previous: ScanState, formData: FormData): Promise<Sc
     throw error;
   }
 
+  const secret = process.env.IP_HASH_SECRET;
+  const ip = clientIp(await headers());
+  if (!secret || !ip) {
+    console.error(`[scan] refused: ${secret ? "no client IP" : "IP_HASH_SECRET is not set"}`);
+    return { status: "error", address, message: ERROR_MESSAGES.scan_unavailable };
+  }
+
+  let id: string;
+  try {
+    const outcome = await reuseOrScan(url, hashIp(ip, secret));
+    if (!outcome.ok) return { status: "error", address, message: ERROR_MESSAGES[outcome.reason] };
+    id = outcome.id;
+  } catch (error) {
+    console.error("[scan] failed:", error);
+    return { status: "error", address, message: ERROR_MESSAGES.scan_unavailable };
+  }
+  // Outside the try: redirect() works by throwing.
+  redirect(`/report/${id}`);
+}
+
+async function reuseOrScan(url: URL, ipHash: string) {
+  const cached = await findRecentScanId(url);
+  if (cached) return { ok: true, id: cached } as const;
+
+  const refusal = await reserveScan(ipHash);
+  if (refusal) return { ok: false, reason: refusal } as const;
+
   const outcome = await runScan(url, { safeRequest, inspectCertificate });
-  return outcome.ok
-    ? { status: "done", address, report: outcome.report }
-    : { status: "error", address, message: ERROR_MESSAGES[outcome.reason] };
+  if (!outcome.ok) return outcome;
+  return { ok: true, id: await saveScan(url, outcome.report) } as const;
+}
+
+/** Vercel sets x-real-ip. Outside Vercel (next dev, e2e) every request counts as one local client. */
+function clientIp(requestHeaders: Headers): string | undefined {
+  return ipAddress(requestHeaders) ?? (process.env.VERCEL ? undefined : "local");
 }

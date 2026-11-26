@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 
 import type { ScanReport as Report } from "@/lib/checks/scan";
+import { scoresOf } from "@/lib/checks/score";
 
 import { ScanReport } from "./scan-report";
 
@@ -17,7 +18,9 @@ const report: Report = {
   ],
 };
 
-const html = renderToStaticMarkup(createElement(ScanReport, { report }));
+// Scores as saveScan stores them.
+const render = (r: Report) => renderToStaticMarkup(createElement(ScanReport, { report: r, scores: scoresOf(r.results) }));
+const html = render(report);
 const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ");
 
 describe("ScanReport", () => {
@@ -46,38 +49,38 @@ describe("ScanReport", () => {
   });
 
   it("lists the problems first, by weight, linking to each result", () => {
-    const withProblems = renderToStaticMarkup(
-      createElement(ScanReport, {
-        report: {
-          ...report,
-          results: [
-            { id: "httpRedirect", outcome: "problem", found: [] },
-            { id: "mixedContent", outcome: "warning", found: [] },
-            { id: "https", outcome: "problem", found: [] },
-          ],
-        },
-      }),
-    );
+    const withProblems = render({
+      ...report,
+      results: [
+        { id: "httpRedirect", outcome: "problem", found: [] },
+        { id: "mixedContent", outcome: "warning", found: [] },
+        { id: "https", outcome: "problem", found: [] },
+      ],
+    });
     const summary = withProblems.slice(withProblems.indexOf("Da sistemare subito"), withProblems.indexOf("Sicurezza"));
     expect([...summary.matchAll(/href="#check-(\w+)"/g)].map((m) => m[1])).toEqual(["https", "httpRedirect"]);
     expect(withProblems).toContain('id="check-https"');
   });
 
   it("has no summary without problems, and no score without checks that ran", () => {
-    const empty = renderToStaticMarkup(
-      createElement(ScanReport, {
-        report: { ...report, results: [{ id: "https", outcome: "unverified", reason: "timeout", found: [] }] },
-      }),
-    );
+    const empty = render({ ...report, results: [{ id: "https", outcome: "unverified", reason: "timeout", found: [] }] });
     expect(empty).not.toContain("Da sistemare subito");
     expect(empty).toContain("Punteggio non disponibile: troppi controlli non si sono potuti eseguire (1 su 1)");
     expect(empty).not.toContain("Buono");
   });
 
   it("says when the page checks read the http version", () => {
-    const overHttp = renderToStaticMarkup(createElement(ScanReport, { report: { ...report, readOverHttp: "http://esempio.it/menu" } }));
+    const overHttp = render({ ...report, readOverHttp: "http://esempio.it/menu" });
     expect(overHttp).toContain("usano la versione http");
     expect(text).not.toContain("usano la versione http");
+  });
+
+  it("shows the saved score, not one computed again", () => {
+    const saved = renderToStaticMarkup(
+      createElement(ScanReport, { report, scores: { security: { value: 42, partial: false } } }),
+    );
+    expect(saved).toContain("42");
+    expect(saved).not.toContain("71");
   });
 
   it("keeps technical details in a native disclosure", () => {
