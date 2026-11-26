@@ -16,15 +16,13 @@ export default function HowItWorks() {
           YuSure guarda un sito come lo guarderebbe un visitatore qualsiasi e ti dice, in parole
           semplici, cosa va bene e cosa si può migliorare.
         </p>
-        <p className="rounded-xl bg-surface-raised px-4 py-3 text-ink-muted">
-          YuSure è in costruzione: le scansioni arrivano a breve.
-        </p>
       </header>
 
       <section aria-labelledby="cosa-controlla" className="flex flex-col gap-4">
         <h2 id="cosa-controlla" className="text-xl font-semibold">
           Cosa controlla
         </h2>
+        {/* "In arrivo" until the checks exist: SEO and accessibility in M4, speed in M5 (MILESTONES). */}
         <ul className="flex list-disc flex-col gap-2 pl-5">
           <li>
             <strong className="font-semibold">Sicurezza:</strong> se il sito usa una connessione
@@ -32,15 +30,15 @@ export default function HowItWorks() {
             sito invia al browser per proteggere chi lo visita.
           </li>
           <li>
-            <strong className="font-semibold">Velocità:</strong> quanto ci mette la pagina a
+            <strong className="font-semibold">Velocità</strong> <Upcoming />: quanto ci mette la pagina a
             comparire e a rispondere su un telefono, misurato con PageSpeed Insights di Google.
           </li>
           <li>
-            <strong className="font-semibold">Visibilità su Google:</strong> titolo, descrizione,
+            <strong className="font-semibold">Visibilità su Google</strong> <Upcoming />: titolo, descrizione,
             adattamento ai telefoni e se i motori di ricerca possono trovare la pagina.
           </li>
           <li>
-            <strong className="font-semibold">Accessibilità:</strong> se la pagina si può usare
+            <strong className="font-semibold">Accessibilità</strong> <Upcoming />: se la pagina si può usare
             anche da chi vede poco o usa un lettore di schermo: testi delle immagini, etichette dei
             campi, contrasto dei colori.
           </li>
@@ -124,4 +122,8 @@ export default function HowItWorks() {
       </section>
     </article>
   );
+}
+
+function Upcoming() {
+  return <span className="text-ink-muted">(in arrivo)</span>;
 }
