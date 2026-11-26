@@ -1,4 +1,4 @@
-import { CHECKS, type Outcome, type Section } from "./catalog";
+import { CHECKS, RECOMMENDED_MAX_WEIGHT, SCORE_CAPS, type CheckDefinition, type Outcome, type Section } from "./catalog";
 import type { CheckResult } from "./result";
 
 /*
@@ -6,7 +6,8 @@ import type { CheckResult } from "./result";
  * Unverified checks leave the count: the score is on the others, and says it is partial.
  */
 
-export type Score = { value: number; partial: boolean };
+/** capped: a result keeps the score at SCORE_CAPS' maximum, whatever the rest (noindex, robots.txt blocking all). */
+export type Score = { value: number; partial: boolean; capped?: true };
 /** No score: the checks that ran weigh less than half of the section (decided in M3). */
 export type Unscored = { unverified: number; checks: number };
 export type Verdict = "good" | "improve" | "critical";
@@ -15,24 +16,41 @@ const LOST_SHARE: Record<Exclude<Outcome, "unverified">, number> = { ok: 0, warn
 
 export const SECTION_WEIGHTS: Record<Section, number> = { security: 35, performance: 25, seo: 25, accessibility: 15 };
 
+/** The weight a result loses points on: its variant's, when the variant has one (h1 with several headings). */
+export function lossWeight({ id, variant }: CheckResult): number {
+  const check: CheckDefinition = CHECKS[id];
+  return (variant && check.variants?.[variant]?.weight) || check.weight;
+}
+
+/** A low-weight warning: shown as "Consigliato" next to "Attenzione", the same way in every section. */
+export function isRecommended(result: CheckResult): boolean {
+  return result.outcome === "warning" && lossWeight(result) <= RECOMMENDED_MAX_WEIGHT;
+}
+
 /** 0–100 for one section, or no score when the checks that ran weigh less than half of it. */
 export function sectionScore(results: CheckResult[], section: Section): Score | Unscored {
   const inSection = results.filter((r) => CHECKS[r.id].section === section);
   let total = 0;
   let possible = 0;
   let lost = 0;
-  for (const { id, outcome } of inSection) {
+  for (const result of inSection) {
+    const { id, outcome } = result;
     total += CHECKS[id].weight;
     if (outcome === "unverified") continue;
     possible += CHECKS[id].weight;
-    lost += CHECKS[id].weight * LOST_SHARE[outcome];
+    lost += lossWeight(result) * LOST_SHARE[outcome];
   }
   if (possible === 0 || possible * 2 < total) {
     return { unverified: inSection.filter((r) => r.outcome === "unverified").length, checks: inSection.length };
   }
   // possible - lost is a whole or half number: exact, unlike 1 - lost / possible.
   const value = Math.round((100 * (possible - lost)) / possible);
-  return { value, partial: inSection.some((r) => r.outcome === "unverified") };
+  const partial = inSection.some((r) => r.outcome === "unverified");
+  const cap = SCORE_CAPS[section];
+  const capped = cap?.when.some((rule) =>
+    inSection.some((r) => r.id === rule.id && (rule.outcome ?? r.outcome) === r.outcome && (rule.variant ?? r.variant) === r.variant),
+  );
+  return cap && capped ? { value: Math.min(value, cap.max), partial, capped: true } : { value, partial };
 }
 
 /**
@@ -53,11 +71,16 @@ export function totalScore(sections: Partial<Record<Section, Score>>): Score | u
   return { value, partial };
 }
 
-/** The scores saved with a report, at scan time (ADR-0003). Only security until M4. */
-export type Scores = { security: Score | Unscored };
+/** The scores saved with a report, at scan time (ADR-0003). Reports of catalog v1 have security only. */
+export type Scores = { security: Score | Unscored; seo?: Score | Unscored; accessibility?: Score | Unscored };
 
+/** Performance and the total arrive with PageSpeed (M5). */
 export function scoresOf(results: CheckResult[]): Scores {
-  return { security: sectionScore(results, "security") };
+  return {
+    security: sectionScore(results, "security"),
+    seo: sectionScore(results, "seo"),
+    accessibility: sectionScore(results, "accessibility"),
+  };
 }
 
 export function verdict(score: number): Verdict {

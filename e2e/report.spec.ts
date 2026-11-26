@@ -15,6 +15,22 @@ test("a saved report shows its results and is not indexed", async ({ page }) => 
   await expect(noindexMeta(page)).toBeAttached();
 });
 
+test("a report of today's catalog has the SEO and accessibility sections", async ({ page }) => {
+  await page.goto(`/report/${FRESH_REPORT_ID}`);
+  for (const section of ["Sicurezza", "SEO", "Accessibilità"]) {
+    await expect(page.getByRole("heading", { level: 2, name: section })).toBeVisible();
+  }
+  await expect(page.getByRole("heading", { name: "Il titolo della pagina è molto corto (5 caratteri)" })).toBeVisible();
+  await expect(page.getByText("La pagina si costruisce nel browser")).toBeVisible();
+  await expect(page.getByText("versione precedente dei controlli")).toHaveCount(0);
+});
+
+test("a report of an older catalog says so and shows only what it has", async ({ page }) => {
+  await page.goto(`/report/${OLD_REPORT_ID}`);
+  await expect(page.getByText("versione precedente dei controlli")).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "SEO" })).toHaveCount(0);
+});
+
 test("a report younger than 24 hours says when it can be scanned again", async ({ page }) => {
   await page.goto(`/report/${FRESH_REPORT_ID}`);
   await expect(page.getByText(/potrai rifare la scansione dal/)).toBeVisible();

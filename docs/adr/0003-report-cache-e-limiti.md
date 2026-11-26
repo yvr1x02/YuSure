@@ -22,17 +22,20 @@ Così il report compare in pochi secondi e il tempo di PageSpeed non blocca ness
 
 ### Salvataggio
 
-Una tabella `scans` su Neon:
+Una tabella `scans` su Neon. Lo schema reale è in [`migrations/`](../../migrations/); questa tabella lo descrive (allineata il 2026-11-26, M4):
 
 | Campo | Contenuto |
 |---|---|
-| `id` | identificativo casuale non indovinabile, usato nel link |
+| `id` | identificativo casuale non indovinabile (16 byte in base64url), usato nel link |
+| `cache_key` | dominio normalizzato più percorso dell'indirizzo inserito: la chiave della cache di 24 ore (sotto) |
 | `domain` | dominio normalizzato (minuscolo, senza `www.`) |
-| `url` | indirizzo analizzato dopo i redirect |
+| `url` | la versione `https://` dell'indirizzo inserito, cioè quella analizzata, **prima** dei redirect; dove porta la pagina si legge nei dettagli tecnici dei controlli |
 | `created_at` | data della scansione |
-| `status` | `running`, `done`, `partial` |
-| `checks` | risultati dei controlli (JSON), con la versione del catalogo |
-| `scores` | punteggi per sezione e totale |
+| `status` | `running`, `done`, `partial`; fino a M4 si scrive solo `done`, gli altri servono con PageSpeed (M5) |
+| `checks` | JSON `{ catalogVersion, readOverHttp?, results }`: la versione del catalogo dei controlli, l'indirizzo http se la pagina è stata letta così, i risultati grezzi |
+| `scores` | punteggi per sezione, calcolati al momento della scansione; il totale arriva con tutte le sezioni (M5) |
+
+E una tabella `scan_requests` per il limite per IP: `ip_hash` (HMAC dell'IP, mai l'IP) e `created_at`.
 
 - **Il database si raggiunge solo dal server**, con la stringa di connessione in `DATABASE_URL`. Il browser non legge né scrive il database e non esiste un'API pubblica verso di esso, quindi non serve la Row Level Security.
 - I report non scadono nella v1: riguardano siti pubblici e contengono solo ciò che quei siti mostrano a tutti.
@@ -77,7 +80,7 @@ Se lo stesso indirizzo è stato scansionato nelle ultime 24 ore, si apre quel re
 ## Conseguenze
 
 - In M0 si verificano sulla documentazione di Next.js e Vercel installati: il comportamento di `after()` su Vercel e la durata massima delle funzioni nel piano in uso.
-- Il catalogo dei controlli ha una versione: i report vecchi indicano con quale versione sono stati fatti.
+- Il catalogo dei controlli ha una versione, salvata in `checks.catalogVersion`. Un report fatto con una versione precedente lo dice con una nota, perché alcuni controlli di oggi allora non c'erano.
 - Il tetto globale e i 5 all'ora sono valori di partenza, configurabili da variabili d'ambiente.
 
 ## Verifiche M0: condizioni dei piani gratuiti

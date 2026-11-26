@@ -87,7 +87,10 @@ describe("runScan", () => {
     const hang = (options?: SafeRequestOptions) =>
       new Promise<never>((_, reject) => {
         signals.push(options?.signal);
-        options?.signal?.addEventListener("abort", () => reject(new SafeRequestError("scan_deadline", "test")));
+        const stop = () => reject(new SafeRequestError("scan_deadline", "test"));
+        // Like safeRequest: a signal already aborted rejects at once.
+        if (options?.signal?.aborted) stop();
+        options?.signal?.addEventListener("abort", stop);
       });
     const io: ScanIO = {
       safeRequest: (_url, options) => hang(options),
@@ -96,7 +99,8 @@ describe("runScan", () => {
 
     const outcome = await runScan(new URL("https://esempio.it/"), io, { now, timeoutMs: 50 });
     if (!outcome.ok) throw new Error("expected a report");
-    expect(signals).toHaveLength(3);
+    // Page, http trace, certificate, then robots.txt and the sitemap.
+    expect(signals).toHaveLength(5);
     expect(new Set(signals).size).toBe(1);
     expect(outcome.report.results.every((r) => r.outcome === "unverified" && r.reason === "scan_deadline")).toBe(true);
   });
@@ -114,7 +118,9 @@ describe("runScan", () => {
 
 describe("page checks: which version is read (SPEC, regole comuni)", () => {
   type Answer = SafeResponse | SafeRequestError;
-  const PAGE_CHECK_IDS = Object.keys(CHECKS).slice(4);
+  // robots.txt and the sitemap are requests of their own, not checks on the page.
+  const NOT_PAGE = ["robotsTxt", "sitemap"];
+  const PAGE_CHECK_IDS = Object.keys(CHECKS).slice(4).filter((id) => !NOT_PAGE.includes(id));
 
   // The Server header tells which response the page checks read.
   const page = (url: string, server: string, status = 200, redirects: string[] = []): SafeResponse => ({
@@ -127,6 +133,7 @@ describe("page checks: which version is read (SPEC, regole comuni)", () => {
   function site(https: Answer, http: Record<string, Answer>): ScanIO {
     return {
       safeRequest: vi.fn(async (url: URL) => {
+        if (["/robots.txt", "/sitemap.xml"].includes(url.pathname)) return okPage(url, 404);
         const answer = url.protocol === "https:" ? https : http[url.href];
         if (!answer) throw new Error(`unexpected request to ${url.href}`);
         if (answer instanceof SafeRequestError) throw answer;
@@ -140,7 +147,8 @@ describe("page checks: which version is read (SPEC, regole comuni)", () => {
     const outcome = await runScan(new URL(address), io, { now });
     if (!outcome.ok) throw new Error("expected a report");
     const byId = Object.fromEntries(outcome.report.results.map((r) => [r.id, r]));
-    return { report: outcome.report, byId, pageResults: outcome.report.results.slice(4) };
+    const pageResults = outcome.report.results.slice(4).filter((r) => !NOT_PAGE.includes(r.id));
+    return { report: outcome.report, byId, pageResults };
   }
 
   const httpsPage = page("https://esempio.it/", "via-https");
@@ -267,7 +275,8 @@ describe("page checks: which version is read (SPEC, regole comuni)", () => {
     };
     const outcome = await runScan(new URL("https://esempio.it/"), io, { now, timeoutMs: 50 });
     if (!outcome.ok) throw new Error("expected a report");
-    const pageResults = outcome.report.results.slice(4);
+    // robots.txt over https meets the same tls_error: it gives its own reason.
+    const pageResults = outcome.report.results.slice(4).filter((r) => !NOT_PAGE.includes(r.id));
     expect(pageResults.every((r) => r.outcome === "unverified" && r.reason === "scan_deadline")).toBe(true);
   });
 });

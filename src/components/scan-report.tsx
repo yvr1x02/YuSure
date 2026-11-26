@@ -5,16 +5,20 @@ import {
   ERROR_MESSAGES,
   fillText,
   OUTCOME_LABELS,
+  CATALOG_VERSION,
   READ_OVER_HTTP_NOTE,
+  RECOMMENDED_LABEL,
+  REPORT_TEXTS,
   SCORE_TEXTS,
   SECTION_LABELS,
   VERDICT_LABELS,
   type CheckDefinition,
   type Outcome,
+  type Section,
 } from "@/lib/checks/catalog";
 import type { CheckResult } from "@/lib/checks/result";
 import type { ScanReport as Report } from "@/lib/checks/scan";
-import { verdict, type Scores } from "@/lib/checks/score";
+import { isRecommended, SECTION_WEIGHTS, verdict, type Score, type Scores, type Unscored } from "@/lib/checks/score";
 
 // Outcome is never colour alone: icon and word too (docs/DESIGN.md, WCAG 1.4.1).
 const OUTCOME_STYLE: Record<Outcome, { icon: string; className: string }> = {
@@ -31,13 +35,28 @@ const scannedAtFormat = new Intl.DateTimeFormat("it-IT", {
 });
 
 /** The report page's content. Scores come saved with the report; texts from the catalog (ADR-0003). */
-export function ScanReport({ report, scores, actions }: { report: Report; scores: Scores; actions?: ReactNode }) {
+export function ScanReport({
+  report,
+  scores,
+  catalogVersion = CATALOG_VERSION,
+  actions,
+}: {
+  report: Report;
+  scores: Scores;
+  /** Of the saved report: an older one lacks checks added since (ADR-0003). */
+  catalogVersion?: number;
+  actions?: ReactNode;
+}) {
   const url = new URL(report.url);
-  const urgent = report.results
-    .filter((r) => r.outcome === "problem")
-    .sort((a, b) => CHECKS[b.id].weight - CHECKS[a.id].weight);
-  // Only security exists until M4; the total score appears with all four sections (M5).
-  const score = scores.security;
+  // Weights add up to 100 inside each section: across sections, the section's own weight counts too.
+  const importance = (r: CheckResult) => CHECKS[r.id].weight * SECTION_WEIGHTS[CHECKS[r.id].section];
+  const urgent = report.results.filter((r) => r.outcome === "problem").sort((a, b) => importance(b) - importance(a));
+  // Sections with a saved score, in report order; performance and the total score arrive in M5.
+  const sections = (["security", "seo", "accessibility"] as const).flatMap((section) => {
+    const score = scores[section];
+    const results = report.results.filter((r) => CHECKS[r.id].section === section);
+    return score && results.length > 0 ? [{ section, score, results }] : [];
+  });
 
   return (
     <section aria-labelledby="report-title" className="flex flex-col gap-6">
@@ -50,6 +69,7 @@ export function ScanReport({ report, scores, actions }: { report: Report; scores
           <span className="break-all">{report.url}</span>
         </p>
         {report.readOverHttp && <p className="mt-2 max-w-text">{READ_OVER_HTTP_NOTE}</p>}
+        {catalogVersion < CATALOG_VERSION && <p className="mt-2 max-w-text">{REPORT_TEXTS.olderCatalog}</p>}
       </div>
       {actions}
       {urgent.length > 0 && (
@@ -66,33 +86,45 @@ export function ScanReport({ report, scores, actions }: { report: Report; scores
           </ul>
         </div>
       )}
-      <div className="flex flex-col gap-2">
-        <h2 className="text-xl font-semibold">{SECTION_LABELS.security}</h2>
-        {"value" in score ? (
-          <>
-            <p className="flex flex-wrap items-baseline gap-x-3">
-              <span className="font-display text-5xl font-extrabold">{score.value}</span>
-              <span className="sr-only"> su 100, </span>
-              <span className="font-display text-2xl font-light">{VERDICT_LABELS[verdict(score.value)]}</span>
-            </p>
-            {score.partial && <p className="text-ink-muted">{SCORE_TEXTS.partial}</p>}
-          </>
-        ) : (
-          <p>{fillText(SCORE_TEXTS.unavailable, { unverified: String(score.unverified), checks: String(score.checks) })}</p>
-        )}
-        <ul className="flex flex-col">
-          {report.results.map((result) => (
-            <ResultItem key={result.id} result={result} />
-          ))}
-        </ul>
-      </div>
+      {sections.map(({ section, score, results }) => (
+        <ReportSection key={section} section={section} score={score} results={results} />
+      ))}
+    </section>
+  );
+}
+
+function ReportSection({ section, score, results }: { section: Section; score: Score | Unscored; results: CheckResult[] }) {
+  return (
+    <section aria-labelledby={`section-${section}`} className="flex flex-col gap-2">
+      <h2 id={`section-${section}`} className="text-xl font-semibold">
+        {SECTION_LABELS[section]}
+      </h2>
+      {"value" in score ? (
+        <>
+          <p className="flex flex-wrap items-baseline gap-x-3">
+            <span className="font-display text-5xl font-extrabold">{score.value}</span>
+            <span className="sr-only"> su 100, </span>
+            <span className="font-display text-2xl font-light">{VERDICT_LABELS[verdict(score.value)]}</span>
+          </p>
+          {score.capped && <p className="max-w-text">{SCORE_TEXTS.capped}</p>}
+          {score.partial && <p className="text-ink-muted">{SCORE_TEXTS.partial}</p>}
+        </>
+      ) : (
+        <p>{fillText(SCORE_TEXTS.unavailable, { unverified: String(score.unverified), checks: String(score.checks) })}</p>
+      )}
+      <ul className="flex flex-col">
+        {results.map((result) => (
+          <ResultItem key={result.id} result={result} />
+        ))}
+      </ul>
     </section>
   );
 }
 
 function textsOf(result: CheckResult) {
   const check: CheckDefinition = CHECKS[result.id];
-  return result.outcome === "unverified" ? undefined : check.texts[result.outcome];
+  if (result.outcome === "unverified") return undefined;
+  return (result.variant && check.variants?.[result.variant]) || check.texts[result.outcome];
 }
 
 function headlineOf(result: CheckResult): string {
@@ -108,7 +140,7 @@ function ResultItem({ result }: { result: CheckResult }) {
 
   return (
     <li id={`check-${result.id}`} className="flex scroll-mt-6 flex-col gap-2 border-t border-edge-subtle py-4 sm:flex-row sm:gap-6">
-      <p className={`flex shrink-0 items-center gap-2 self-start font-medium sm:w-40 ${style.className}`}>
+      <p className={`flex shrink-0 flex-wrap items-center gap-x-2 self-start font-medium sm:w-40 ${style.className}`}>
         <span
           aria-hidden="true"
           className="inline-flex size-6 items-center justify-center rounded-full border border-current text-sm"
@@ -116,6 +148,7 @@ function ResultItem({ result }: { result: CheckResult }) {
           {style.icon}
         </span>
         {OUTCOME_LABELS[result.outcome]}
+        {isRecommended(result) && <span className="w-full pl-8 text-sm font-normal text-ink-muted">{RECOMMENDED_LABEL}</span>}
       </p>
       <div className="flex min-w-0 flex-col gap-1">
         <h3 className="font-medium">{headlineOf(result)}</h3>

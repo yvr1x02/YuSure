@@ -71,7 +71,7 @@ describe.skipIf(!database)("database (TEST_DATABASE_URL)", () => {
       expect(id).toMatch(/^[A-Za-z0-9_-]{22}$/);
 
       const saved = await findScan(id);
-      expect(saved).toEqual({ id, report, scores: scoresOf(report.results) });
+      expect(saved).toEqual({ id, report, scores: scoresOf(report.results), catalogVersion: CATALOG_VERSION });
 
       const { rows } = await pool.query("select cache_key, domain, status, checks from scans where id = $1", [id]);
       expect(rows[0]).toMatchObject({ cache_key: "esempio.it/menu", domain: "esempio.it", status: "done" });
