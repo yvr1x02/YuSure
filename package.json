@@ -9,12 +9,15 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "db:migrate": "node --env-file=.env.local scripts/migrate.mjs"
   },
   "dependencies": {
+    "@vercel/functions": "3.11.4",
     "cheerio": "1.2.0",
     "ipaddr.js": "2.5.0",
     "next": "16.4.6",
+    "pg": "8.23.1",
     "react": "19.3.1",
     "react-dom": "19.3.1"
   },
@@ -23,6 +26,7 @@
     "@playwright/test": "1.65.1",
     "@tailwindcss/turbopack": "4.3.5",
     "@types/node": "^22.20.6",
+    "@types/pg": "8.23.1",
     "@types/react": "^19.3.2",
     "@types/react-dom": "^19.3.0",
     "eslint": "^9",
