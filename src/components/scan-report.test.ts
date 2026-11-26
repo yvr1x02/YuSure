@@ -70,7 +70,8 @@ describe("ScanReport", () => {
       }),
     );
     expect(empty).not.toContain("Da sistemare subito");
-    expect(empty).toContain("Punteggio non disponibile");
+    expect(empty).toContain("Punteggio non disponibile: troppi controlli non si sono potuti eseguire (1 su 1)");
+    expect(empty).not.toContain("Buono");
   });
 
   it("says when the page checks read the http version", () => {

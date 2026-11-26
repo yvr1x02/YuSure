@@ -111,10 +111,11 @@ Dall'API di PageSpeed Insights (Lighthouse), per mobile:
 ## Punteggio
 
 - Ogni sezione va da 0 a 100: si parte da 100 e si toglie il peso dei controlli non superati, secondo l'esito: un problema toglie tutto il peso, un'attenzione metà. I pesi stanno nel catalogo; quelli di Sicurezza sommano a 100.
-- Formula (decisa in M2): `arrotonda(100 × (pesi verificati − punti persi) ÷ pesi verificati)`, dove "pesi verificati" è la somma dei pesi dei controlli non "non verificati". Se nessun controllo di una sezione è verificato, la sezione non ha punteggio. Esempio: 19 punti persi su 100 danno 81; se il controllo del redirect (peso 12) non si può eseguire, 19 su 88 danno 78, parziale.
+- Formula (decisa in M2): `arrotonda(100 × (pesi verificati − punti persi) ÷ pesi verificati)`, dove "pesi verificati" è la somma dei pesi dei controlli non "non verificati". Esempio: 19 punti persi su 100 danno 81; se il controllo del redirect (peso 12) non si può eseguire, 19 su 88 danno 78, parziale.
 - Performance e Accessibilità usano il punteggio di Lighthouse, corretto dai controlli propri dove ci sono.
-- Il punteggio totale è la media pesata delle quattro sezioni: Sicurezza 35%, Performance 25%, SEO 25%, Accessibilità 15%. Si calcola dai punteggi delle sezioni già arrotondati; una sezione senza punteggio esce dalla media, i pesi delle altre si ricalcolano e il totale è parziale. Si mostra da M5, quando ci sono tutte le sezioni.
+- Il punteggio totale è la media pesata delle quattro sezioni: Sicurezza 35%, Performance 25%, SEO 25%, Accessibilità 15%. Si calcola dai punteggi delle sezioni già arrotondati; una sezione senza punteggio esce dalla media, i pesi delle altre si ricalcolano e il totale è parziale. Se le sezioni con un punteggio pesano meno della metà (meno di 50 su 100), niente totale. Si mostra da M5, quando ci sono tutte le sezioni.
 - I controlli "non verificati" non contano: il punteggio si calcola sugli altri e il report dice che è parziale.
+- **Copertura minima** (decisa in M3): se i controlli verificati di una sezione pesano meno della metà del peso totale della sezione, la sezione non ha né punteggio né giudizio. Il report scrive "Punteggio non disponibile" con il motivo: quanti controlli non si sono potuti eseguire, su quanti. Esattamente la metà basta. Caso che l'ha fatta nascere: `neverssl.com` il 2026-11-26, con https che chiude la connessione e http in timeout, aveva verificati solo i due controlli sul certificato (24 su 100) e risultava "100, Buono".
 - Giudizio, sul numero arrotondato: 90–100 Buono, 60–89 Da migliorare, sotto 60 Critico.
 - "Consigliato" non è un esito: nel report è un'attenzione con un peso basso. Gli esiti restano quattro.
 

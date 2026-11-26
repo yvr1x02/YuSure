@@ -362,7 +362,8 @@ export const VERDICT_LABELS: Record<Verdict, string> = {
 export const SCORE_TEXTS = {
   urgent: "Da sistemare subito",
   partial: "Punteggio parziale: i controlli non verificati non sono contati.",
-  unavailable: "Punteggio non disponibile: nessun controllo di questa sezione si è potuto eseguire.",
+  unavailable:
+    "Punteggio non disponibile: troppi controlli non si sono potuti eseguire ({unverified} su {checks}) per dare un voto affidabile.",
 };
 
 /** Shown above the results when the page checks used the http version (SPEC, regole comuni). */

@@ -64,16 +64,18 @@ export function ScanReport({ report }: { report: Report }) {
       )}
       <div className="flex flex-col gap-2">
         <h3 className="text-xl font-semibold">{SECTION_LABELS.security}</h3>
-        {score ? (
-          <p className="flex flex-wrap items-baseline gap-x-3">
-            <span className="font-display text-5xl font-extrabold">{score.value}</span>
-            <span className="sr-only"> su 100, </span>
-            <span className="font-display text-2xl font-light">{VERDICT_LABELS[verdict(score.value)]}</span>
-          </p>
+        {"value" in score ? (
+          <>
+            <p className="flex flex-wrap items-baseline gap-x-3">
+              <span className="font-display text-5xl font-extrabold">{score.value}</span>
+              <span className="sr-only"> su 100, </span>
+              <span className="font-display text-2xl font-light">{VERDICT_LABELS[verdict(score.value)]}</span>
+            </p>
+            {score.partial && <p className="text-ink-muted">{SCORE_TEXTS.partial}</p>}
+          </>
         ) : (
-          <p>{SCORE_TEXTS.unavailable}</p>
+          <p>{fillText(SCORE_TEXTS.unavailable, { unverified: String(score.unverified), checks: String(score.checks) })}</p>
         )}
-        {score?.partial && <p className="text-ink-muted">{SCORE_TEXTS.partial}</p>}
         <ul className="flex flex-col">
           {report.results.map((result) => (
             <ResultItem key={result.id} result={result} />
