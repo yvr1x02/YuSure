@@ -22,7 +22,7 @@ export default function HowItWorks() {
         <h2 id="cosa-controlla" className="text-xl font-semibold">
           Cosa controlla
         </h2>
-        {/* "In arrivo" until the checks exist: SEO and accessibility in M4, speed in M5 (MILESTONES). */}
+        {/* "In arrivo" until the checks exist: speed and colour contrast come with PageSpeed in M5 (MILESTONES). */}
         <ul className="flex list-disc flex-col gap-2 pl-5">
           <li>
             <strong className="font-semibold">Sicurezza:</strong> se il sito usa una connessione
@@ -34,13 +34,13 @@ export default function HowItWorks() {
             comparire e a rispondere su un telefono, misurato con PageSpeed Insights di Google.
           </li>
           <li>
-            <strong className="font-semibold">Visibilità su Google</strong> <Upcoming />: titolo, descrizione,
+            <strong className="font-semibold">Visibilità su Google:</strong> titolo, descrizione,
             adattamento ai telefoni e se i motori di ricerca possono trovare la pagina.
           </li>
           <li>
-            <strong className="font-semibold">Accessibilità</strong> <Upcoming />: se la pagina si può usare
+            <strong className="font-semibold">Accessibilità:</strong> se la pagina si può usare
             anche da chi vede poco o usa un lettore di schermo: testi delle immagini, etichette dei
-            campi, contrasto dei colori.
+            campi, testo di link e pulsanti; il contrasto dei colori <Upcoming />.
           </li>
         </ul>
         <p>

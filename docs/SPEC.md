@@ -33,7 +33,7 @@ Pubblico del report: prima il titolare, poi lo sviluppatore. Ogni risultato ha u
 - Per ogni controllo:
   - esito: ok, attenzione, problema, oppure "non verificato" con il motivo;
   - frase per il titolare (cosa significa e perché conta);
-  - "Dettagli tecnici" apribile: valori letti, cosa ci si aspettava, link alla documentazione (MDN o web.dev).
+  - "Dettagli tecnici" apribile: valori letti, cosa ci si aspettava, link alla documentazione (MDN o web.dev; per `robots.txt`, sitemap e dati strutturati la documentazione di Google Search, per Open Graph ogp.me: *deviazione proposta in M4, da approvare*).
 - I problemi gravi compaiono per primi in un riepilogo "Da sistemare subito".
 - I risultati che arrivano dopo (Performance, ADR-0003) mostrano uno stato di caricamento e si completano da soli.
 - Pulsante "Copia link" del report e "Rifai la scansione" (soggetto alla cache di 24 ore).
@@ -103,10 +103,31 @@ Dall'API di PageSpeed Insights (Lighthouse), per mobile:
 | Dati strutturati schema.org (JSON-LD) | Consigliato |
 | La pagina non è esclusa dai motori (`noindex`) | Problema |
 
+Regole decise in M4:
+
+- **Pesi** (sommano a 100): `noindex` 20, title 18, viewport 18, description 10, `robots.txt` 10, lang 6, `h1` 6, sitemap 4, canonical 3, Open Graph 3, dati strutturati 2.
+- I controlli SEO valgono anche sulla pagina letta in http: quello che legge Google non dipende da https.
+- **title e description:** si contano i caratteri come li vede chi legge (un'emoji è un carattere). Senza title: problema; fuori misura: attenzione. Description mancante, corta o lunga: attenzione, con un testo per ogni caso.
+- **`noindex`:** `noindex` o `none` in `<meta name="robots">`, in `<meta name="googlebot">` o nell'header `X-Robots-Tag`, anche con il prefisso `googlebot:`; quelli rivolti ad altri crawler non contano.
+- **`robots.txt`:** si legge dall'host della pagina, dopo i redirect. Vale il gruppo di Googlebot, altrimenti quello di `*`. "Blocca tutto" se ha `Disallow: /` (o `/*`) e nessun `Allow` con un percorso: attenzione. Se risponde 4xx: attenzione, come se mancasse (Google allora visita tutto). Se risponde 5xx: **problema**, con un testo dedicato, perché Google smette di visitare il sito. Se la richiesta non riesce: non verificato.
+- **Sitemap:** la prima riga `Sitemap:` di `robots.txt` con un indirizzo http(s), altrimenti `/sitemap.xml`; una sola richiesta. Ok se risponde 200 con `<urlset>` o `<sitemapindex>` (anche compressa con gzip); un'altra risposta è un'attenzione, con un testo diverso se l'indirizzo risponde con qualcosa che non è una sitemap.
+- **Dati strutturati:** almeno un blocco JSON-LD leggibile; se ci sono ma nessuno si legge, attenzione con un testo dedicato.
+
 ### Accessibilità
 
 - Dall'HTML: immagini senza `alt`, campi dei form senza etichetta, link e pulsanti senza testo.
 - Da Lighthouse (stessa chiamata della Performance): punteggio Accessibilità e i controlli falliti, compreso il contrasto.
+
+Regole decise in M4, per la parte dall'HTML:
+
+- **Pesi** (sommano a 100 finché non arriva Lighthouse, in M5): immagini 35, etichette dei campi 35, link e pulsanti 30.
+- **Immagini senza `alt`:** 1–2 attenzione, da 3 problema. `alt=""` è giusto per le immagini decorative; non si contano quelle con `role="presentation"` o `"none"` o dentro `aria-hidden="true"`.
+- **Campi senza etichetta:** anche uno solo è un problema. Contano `<label for>`, la `<label>` che contiene il campo, `aria-label`, `aria-labelledby` e `title`; il placeholder no. Pulsanti e campi nascosti non sono campi.
+- **Link e pulsanti senza nome** (`a[href]`, `button`, `role="button"`): 1–2 attenzione, da 3 problema. Il nome viene dal testo, da `aria-label`, `aria-labelledby`, `title`, da un'immagine con `alt` o dal `<title>` di un SVG.
+
+### Pagine costruite nel browser
+
+Decise in M4. Una pagina con un contenitore dell'app vuoto (`#root`, `#app`, `#__next`, `#__nuxt`, `#___gatsby`, `#svelte`, `app-root`), almeno uno script e meno di 200 caratteri di testo visibile (senza script, stili, `<noscript>` e `<template>`) si costruisce nel browser. I controlli sul contenuto (`h1` e i tre di accessibilità) risultano "non verificato" con il motivo "La pagina si costruisce nel browser: YuSure non può leggerne il contenuto"; title, meta, header, `robots.txt` e sitemap restano controllati. La soglia è fissata da test su pagine di prova (React CSR vuota, Next con SSR, pagina statica, casi limite).
 
 ## Punteggio
 
