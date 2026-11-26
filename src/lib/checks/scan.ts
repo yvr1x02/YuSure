@@ -89,7 +89,7 @@ export async function runScan(
       scannedAt: now.toISOString(),
       ...("response" in source && source.overHttp && { readOverHttp: source.response.url.href }),
       results: [
-        evaluateHttps(page),
+        evaluateHttps(page, httpTrace),
         evaluateHttpRedirect(httpTrace),
         ...evaluateCertificate(certificate, now),
         ...pageResults,

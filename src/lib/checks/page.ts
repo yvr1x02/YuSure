@@ -10,7 +10,13 @@ export type Page = { response: SafeResponse; overHttp: boolean; html?: CheerioAP
 export type NoPage = { reason: ReasonCode; found: string[] };
 
 // https does not answer, or its certificate is refused: the http version stands in (SPEC, regole comuni).
-const FALLBACK_CODES = new Set<SafeRequestErrorCode>(["tls_error", "connection_refused", "connection_failed", "timeout"]);
+const FALLBACK_CODES = new Set<SafeRequestErrorCode>([
+  "tls_error",
+  "connection_refused",
+  "connection_reset",
+  "connection_failed",
+  "timeout",
+]);
 
 export function choosePage(https: SafeResponse | SafeRequestError, trace: HttpTrace): Page | NoPage {
   if (!(https instanceof SafeRequestError)) return readPage(https);

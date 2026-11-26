@@ -14,6 +14,8 @@ import { checkUrl } from "./url";
 export const USER_AGENT = "YuSureBot/1.0 (+https://yusure.vercel.app/come-funziona)";
 const MAX_REDIRECTS = 5;
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
+// The site closed the connection: before a response these become "connection_reset".
+const CLOSED_CODES = new Set(["ECONNRESET", "EPIPE", "ECONNABORTED"]);
 
 export type SafeRequestDeps = {
   resolve: Resolver;
@@ -111,7 +113,10 @@ export function createSafeRequest(deps: SafeRequestDeps) {
     try {
       const response = await new Promise<IncomingMessage>((resolve, reject) => {
         request.once("response", resolve);
-        request.once("error", reject);
+        request.once("error", (error: NodeJS.ErrnoException) =>
+          // Closed by the site before any response, in or right after the TLS handshake.
+          reject(CLOSED_CODES.has(error.code ?? "") ? new SafeRequestError("connection_reset", error.code!) : error),
+        );
         request.end();
       });
       const body = await readBody(response);

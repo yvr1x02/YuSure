@@ -18,32 +18,53 @@ function response(url: string, status = 200, headers: Record<string, string> = {
 const fail = (code: SafeRequestError["code"], message = "test") => new SafeRequestError(code, message);
 
 describe("evaluateHttps", () => {
+  // Most cases do not depend on http: it is not answering here.
+  const httpsAlone = (result: SafeResponse | SafeRequestError) => evaluateHttps(result, { hops: [] });
+
   it("is ok when https answers", () => {
-    expect(evaluateHttps(response("https://esempio.it/"))).toMatchObject({ id: "https", outcome: "ok" });
+    expect(httpsAlone(response("https://esempio.it/"))).toMatchObject({ id: "https", outcome: "ok" });
   });
 
   it.each(["tls_error", "too_large", "bad_response"] as const)(
     "is ok when https answered but the request stopped with %s",
     (code) => {
-      expect(evaluateHttps(fail(code)).outcome).toBe("ok");
+      expect(httpsAlone(fail(code)).outcome).toBe("ok");
     },
   );
 
   it("is a problem when https redirects to http", () => {
-    const result = evaluateHttps(response("http://esempio.it/", 200, {}, ["https://esempio.it/"]));
+    const result = httpsAlone(response("http://esempio.it/", 200, {}, ["https://esempio.it/"]));
     expect(result).toMatchObject({ outcome: "problem", found: ["https://esempio.it/ → http://esempio.it/ (200)"] });
   });
 
+  it("is a problem when https closes the connection before answering and http on the same host answers", () => {
+    const trace = { hops: [{ url: "http://esempio.it/", status: 200 }] };
+    expect(evaluateHttps(fail("connection_reset", "ECONNRESET"), trace)).toMatchObject({
+      outcome: "problem",
+      found: ["connection_reset: ECONNRESET", "http://esempio.it/ → 200"],
+    });
+  });
+
+  it("is unverified when https closes the connection and http does not answer either", () => {
+    const trace = { hops: [], error: fail("connection_refused") };
+    expect(evaluateHttps(fail("connection_reset"), trace)).toMatchObject({ outcome: "unverified", reason: "connection_reset" });
+  });
+
+  it("stays unverified on a timeout even when http answers", () => {
+    const trace = { hops: [{ url: "http://esempio.it/", status: 200 }] };
+    expect(evaluateHttps(fail("timeout"), trace)).toMatchObject({ outcome: "unverified", reason: "timeout" });
+  });
+
   it("is a problem when port 443 refuses the connection", () => {
-    expect(evaluateHttps(fail("connection_refused")).outcome).toBe("problem");
+    expect(httpsAlone(fail("connection_refused")).outcome).toBe("problem");
   });
 
   it("is unverified on a timeout, with the reason", () => {
-    expect(evaluateHttps(fail("timeout"))).toMatchObject({ outcome: "unverified", reason: "timeout" });
+    expect(httpsAlone(fail("timeout"))).toMatchObject({ outcome: "unverified", reason: "timeout" });
   });
 
   it("says when the scan deadline stopped it", () => {
-    expect(evaluateHttps(fail("scan_deadline"))).toMatchObject({ outcome: "unverified", reason: "scan_deadline" });
+    expect(httpsAlone(fail("scan_deadline"))).toMatchObject({ outcome: "unverified", reason: "scan_deadline" });
   });
 });
 

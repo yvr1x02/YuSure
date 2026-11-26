@@ -234,6 +234,27 @@ describe("page checks: which version is read (SPEC, regole comuni)", () => {
     expect(byId.exposedVersions.found[0]).toBe("Server: via-https");
   });
 
+  it("14. counts https as missing when it closes the connection and http answers, reading http", async () => {
+    const { report, byId } = await scan(site(fail("connection_reset"), { "http://esempio.it/": httpPage }));
+    expect(byId.https.outcome).toBe("problem");
+    expect(report.readOverHttp).toBe("http://esempio.it/");
+    expect(byId.exposedVersions.found[0]).toBe("Server: via-http");
+  });
+
+  it("15. leaves https unverified when it closes the connection and http does not answer", async () => {
+    const { byId, pageResults } = await scan(
+      site(fail("connection_reset"), { "http://esempio.it/": fail("connection_refused") }),
+    );
+    expect(byId.https).toMatchObject({ outcome: "unverified", reason: "connection_reset" });
+    expect(pageResults.every((r) => r.outcome === "unverified" && r.reason === "page_unreachable")).toBe(true);
+  });
+
+  it("16. leaves https unverified on a timeout even when http answers", async () => {
+    const { report, byId } = await scan(site(fail("timeout"), { "http://esempio.it/": httpPage }));
+    expect(byId.https).toMatchObject({ outcome: "unverified", reason: "timeout" });
+    expect(report.readOverHttp).toBe("http://esempio.it/");
+  });
+
   it("13. says the scan deadline stopped it when http is still running", async () => {
     const io: ScanIO = {
       safeRequest: (url, options) =>

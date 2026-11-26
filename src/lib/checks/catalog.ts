@@ -329,6 +329,7 @@ export const ERROR_MESSAGES: Record<ReasonCode | "empty_address" | "scan_disable
   not_public: "Questo indirizzo non è un sito pubblico.",
   dns_failed: "Questo dominio non risulta collegato a nessun sito. Controlla che sia scritto bene.",
   connection_refused: "Il sito non accetta connessioni. Potrebbe essere spento o in manutenzione: riprova più tardi.",
+  connection_reset: "Il sito ha chiuso la connessione prima di rispondere.",
   connection_failed: "Non è stato possibile collegarsi al sito.",
   timeout: "Il sito non ha risposto entro 10 secondi.",
   too_large:
@@ -361,7 +362,8 @@ export const VERDICT_LABELS: Record<Verdict, string> = {
 export const SCORE_TEXTS = {
   urgent: "Da sistemare subito",
   partial: "Punteggio parziale: i controlli non verificati non sono contati.",
-  unavailable: "Punteggio non disponibile: nessun controllo di questa sezione si è potuto eseguire.",
+  unavailable:
+    "Punteggio non disponibile: troppi controlli non si sono potuti eseguire ({unverified} su {checks}) per dare un voto affidabile.",
 };
 
 /** Shown above the results when the page checks used the http version (SPEC, regole comuni). */

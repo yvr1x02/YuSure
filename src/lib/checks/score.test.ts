@@ -35,8 +35,8 @@ describe("sectionScore", () => {
   });
 
   it("takes the whole weight for a problem and half for a warning", () => {
-    expect(sectionScore(security({ https: "problem" }), "security")?.value).toBe(75);
-    expect(sectionScore(security({ hsts: "warning" }), "security")?.value).toBe(97); // 96.5, rounded up
+    expect(sectionScore(security({ https: "problem" }), "security")).toMatchObject({ value: 75 });
+    expect(sectionScore(security({ hsts: "warning" }), "security")).toMatchObject({ value: 97 }); // 96.5, rounded up
   });
 
   it("gives 81 for the example: 19 points lost out of 100", () => {
@@ -68,10 +68,26 @@ describe("sectionScore", () => {
     expect(sectionScore(results, "security")).toEqual({ value: 19, partial: true });
   });
 
-  it("has no score when no check of the section could run", () => {
+  it("has no score when no check of the section could run, saying how many did not", () => {
     const allUnverified = Object.fromEntries(SECURITY_IDS.map((id) => [id, "unverified"]));
-    expect(sectionScore(security(allUnverified), "security")).toBeUndefined();
-    expect(sectionScore(security(), "seo")).toBeUndefined();
+    expect(sectionScore(security(allUnverified), "security")).toEqual({ unverified: 13, checks: 13 });
+    expect(sectionScore(security(), "seo")).toEqual({ unverified: 0, checks: 0 });
+  });
+
+  // neverssl.com on 2026-11-26: https closed the connection, http timed out, so only
+  // the certificate could be read. It scored 100, Buono, before the minimum coverage.
+  it("has no score for neverssl.com of 2026-11-26: only the certificate ran, 24 out of 100", () => {
+    const unverified = SECURITY_IDS.filter((id) => !id.startsWith("certificate"));
+    const results = security(Object.fromEntries(unverified.map((id) => [id, "unverified"])));
+    expect(sectionScore(results, "security")).toEqual({ unverified: 11, checks: 13 });
+  });
+
+  it("still scores when the checks that ran weigh exactly half of the section", () => {
+    // https 25 + certificateValid 20 + certificateExpiry 4 + permissionsPolicy 1 = 50 unverified.
+    const half = { https: "unverified", certificateValid: "unverified", certificateExpiry: "unverified", permissionsPolicy: "unverified" } as const;
+    expect(sectionScore(security(half), "security")).toEqual({ value: 100, partial: true });
+    // One more point unverified (referrerPolicy 1): 49 out of 100 ran.
+    expect(sectionScore(security({ ...half, referrerPolicy: "unverified" }), "security")).toEqual({ unverified: 5, checks: 13 });
   });
 });
 
@@ -90,7 +106,13 @@ describe("totalScore", () => {
       value: 72,
       partial: true,
     });
-    expect(totalScore({ security: { value: 81, partial: false } })).toEqual({ value: 81, partial: true });
+  });
+
+  it("has no total when the sections with a score weigh less than half", () => {
+    const score = { value: 80, partial: false };
+    expect(totalScore({ security: score })).toBeUndefined(); // 35
+    expect(totalScore({ performance: score, accessibility: score })).toBeUndefined(); // 40
+    expect(totalScore({ security: score, accessibility: score })).toEqual({ value: 80, partial: true }); // exactly 50
   });
 
   it("is partial when a section is", () => {

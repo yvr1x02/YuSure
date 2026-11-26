@@ -161,6 +161,39 @@ describe("connection to the verified IP", () => {
   });
 });
 
+describe("connection closed by the site", () => {
+  it("reports a connection closed right after the TLS handshake, before any response", async () => {
+    // What neverssl.com does: valid handshake, then a reset ("socket hang up").
+    handler = (req) => req.socket.destroy();
+    const { safeRequest } = setup();
+    await expect(codeOf(safeRequest(new URL("https://esempio.test/")))).resolves.toBe("connection_reset");
+  });
+
+  it("reports a connection closed during the TLS handshake", async () => {
+    const closing = net.createServer((socket) => socket.resetAndDestroy()).listen(0, "127.0.0.1");
+    await once(closing, "listening");
+    const port = (closing.address() as AddressInfo).port;
+    const { safeRequest } = setup({ mapAddress: () => ({ host: "127.0.0.1", port }) });
+    await expect(codeOf(safeRequest(new URL("https://esempio.test/")))).resolves.toBe("connection_reset");
+    closing.close();
+  });
+
+  it("reports a connection closed before any response on http too", async () => {
+    handler = (req) => req.socket.destroy();
+    const { safeRequest } = setup();
+    await expect(codeOf(safeRequest(new URL("http://esempio.test/")))).resolves.toBe("connection_reset");
+  });
+
+  it("keeps a connection closed in the middle of the body apart: the site had answered", async () => {
+    handler = (req, res) => {
+      res.writeHead(200, { "content-length": "100" });
+      res.write("inizio", () => req.socket.destroy());
+    };
+    const { safeRequest } = setup();
+    await expect(codeOf(safeRequest(new URL("https://esempio.test/")))).resolves.toBe("connection_failed");
+  });
+});
+
 describe("redirects", () => {
   function redirectingTo(location: string, status = 302) {
     handler = (req, res) => {

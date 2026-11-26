@@ -4,6 +4,7 @@ export type SafeRequestErrorCode =
   | "not_public"
   | "dns_failed"
   | "connection_refused"
+  | "connection_reset"
   | "connection_failed"
   | "timeout"
   | "scan_deadline"
