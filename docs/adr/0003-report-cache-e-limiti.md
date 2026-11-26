@@ -40,19 +40,28 @@ Una tabella `scans` su Neon:
 
 ### Cache di 24 ore
 
-Se lo stesso dominio è stato scansionato nelle ultime 24 ore, si apre quel report invece di farne uno nuovo. "Rifai la scansione" lo mostra con la data e spiega quando sarà possibile rifarla.
+Se lo stesso indirizzo è stato scansionato nelle ultime 24 ore, si apre quel report invece di farne uno nuovo. "Rifai la scansione" lo mostra con la data e spiega quando sarà possibile rifarla.
+
+- **Chiave della cache** (decisa il 2026-11-26, M3): dominio normalizzato più percorso, presi dall'indirizzo inserito (la cache si controlla prima di qualsiasi richiesta al sito). Lo schema non conta (`http://x.it` e `x.it` danno la stessa chiave), così come query string e frammento, e la barra finale è normalizzata. Prima la chiave era solo il dominio: così due pagine diverse dello stesso sito avrebbero avuto lo stesso report.
 
 ### Limiti
 
 - **Per IP:** al massimo 5 scansioni nuove all'ora (i report già in cache non contano).
 - **Globale:** un tetto giornaliero di scansioni nuove, sotto la quota di PageSpeed verificata in M5. Oltre il tetto si risponde con un messaggio chiaro.
-- I limiti si contano in una tabella `scan_requests` su Neon: niente servizi in più.
+- I limiti si contano su Neon: niente servizi in più.
+- **Valori e conteggio** (decisi il 2026-11-26, M3):
+  - si parte da 5 all'ora per IP e 100 al giorno in totale, letti da variabili d'ambiente;
+  - il tetto globale si conta sulla tabella `scans`, sulle ultime 24 ore (non sul giorno di calendario);
+  - `scan_requests` serve solo alla finestra oraria per IP: le righe più vecchie di 2 ore si cancellano a ogni scansione e dal cron;
+  - il limite per IP si controlla e si registra nella stessa transazione, sotto `pg_advisory_xact_lock` sull'hash dell'IP, così due richieste in parallelo non lo superano.
 
 ### IP e privacy
 
 - L'IP si salva solo come **hash con sale** (HMAC con un segreto del server) nella tabella dei limiti, mai nella tabella dei report.
+- Il segreto è `IP_HASH_SECRET` ed è obbligatorio: se manca, le scansioni si rifiutano invece di salvare un hash senza segreto (deciso il 2026-11-26, M3).
 - Le righe dei limiti scadute si cancellano **a ogni scansione**; un **cron giornaliero** di Vercel, protetto con `CRON_SECRET`, fa da rete di sicurezza quando non arrivano scansioni.
-- Promessa pubblica (pagina "Come funziona"): l'hash dell'IP **si cancella entro 48 ore**.
+- Promessa pubblica (pagina "Come funziona"): l'hash dell'IP **si cancella entro 48 ore**. Con la soglia di 2 ore il caso peggiore è circa 27 ore (2 di vita più fino a 24 ore e 59 minuti tra due passaggi del cron), dentro la promessa e quindi dentro il vincolo per M3 descritto sotto.
+- **I report non si indicizzano** (deciso il 2026-11-26, M3): `/report/[id]` manda `noindex` sia nel meta `robots` sia nell'header `X-Robots-Tag`.
 - Nessun cookie di profilazione, nessuna analytics che salvi dati personali.
 
 ## Alternative considerate

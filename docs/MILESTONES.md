@@ -53,7 +53,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 
 ## M3 — Salvataggio, link e limiti
 
-- Driver Postgres approvato: `pg`, `@types/pg` e `@vercel/functions` (ADR-0001), con una prova sui tempi di avvio a freddo prima della scelta definitiva.
+- Driver Postgres: `pg`, `@types/pg` e `@vercel/functions` (ADR-0001). La prova di avvio a freddo non è stata completata; la scelta segue le raccomandazioni di Neon e Vercel per Fluid compute.
 - Tabelle `scans` e `scan_requests` con migrazioni (ADR-0003).
 - Pagina `/report/[id]`, "Copia link", cache di 24 ore e "Rifai la scansione".
 - Limite per IP e tetto globale, IP come hash con sale.
@@ -62,6 +62,8 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Decisioni del 2026-11-26, all'avvio di M3:
   - Connessione chiusa dal sito prima di qualsiasi risposta https (`connection_reset`): "Il sito risponde in HTTPS" è un problema se http sullo stesso host risponde, altrimenti non verificato; il timeout resta non verificato (SPEC).
   - La regola ESLint su cheerio e undici copre anche gli `import()` dinamici.
+  - Database e migrazioni (ADR-0001): SQL a mano con un runner nostro in `.mjs`; un branch Neon per Production, Preview e Development, con `DATABASE_URL` e `DATABASE_URL_UNPOOLED` per ambiente; Postgres in Docker in locale e in CI. Nessuna migrazione prima che l'utente confermi che i branch Neon sono pronti.
+  - Report, cache e limiti (ADR-0003): chiave della cache dominio più percorso; punteggi salvati alla scansione e frasi calcolate alla visualizzazione; 5 all'ora per IP e 100 al giorno in totale, con il limite per IP sotto `pg_advisory_xact_lock`; righe di `scan_requests` cancellate dopo 2 ore; cron protetto da `CRON_SECRET`; `noindex` sui report; `IP_HASH_SECRET` obbligatoria.
   - SPEC: sezione "Limiti noti", con gli `url(http://…)` nel CSS.
   - Header di sicurezza di YuSure in `next.config.ts`: `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` e una CSP fissa, senza nonce (le pagine restano statiche, ADR-0004 non cambia), con la toolbar di Vercel permessa solo in anteprima.
   - Copertura minima del punteggio: se i controlli verificati pesano meno di metà della sezione, niente punteggio né giudizio; stessa regola per il totale (SPEC, "Punteggio").
@@ -108,3 +110,4 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Inglese.
 - PDF del report.
 - Confronto con una scansione precedente dello stesso dominio.
+- Passare dai Cron Jobs di Vercel a Vercel Schedules quando escono dalla beta (Vercel definisce i Cron Jobs "legacy").
