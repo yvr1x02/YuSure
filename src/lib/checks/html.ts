@@ -8,6 +8,8 @@ import type { SafeResponse } from "@/lib/safe-request";
  */
 
 export type { CheerioAPI };
+/** A selection of elements, as $(…) returns it. */
+export type Selection = ReturnType<CheerioAPI>;
 
 /** The document of an HTML response, decoded like a browser would; undefined for anything else. */
 export function parseHtml(response: SafeResponse): CheerioAPI | undefined {
