@@ -618,7 +618,7 @@ export const CHECKS = {
           "Chi usa un lettore di schermo sente solo «campo di testo» e non sa cosa scriverci. Il testo grigio dentro il campo non basta: sparisce appena si scrive.",
       },
     },
-    expected: "Ogni campo con <label>, aria-label o aria-labelledby (il placeholder non conta)",
+    expected: "Ogni campo con <label>, aria-label, aria-labelledby o title (il placeholder non conta)",
     docs: "https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Elements/label",
   },
 
