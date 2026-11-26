@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { CHECKS, type CheckId, type Outcome } from "./catalog";
 import type { CheckResult } from "./result";
-import { SECTION_WEIGHTS, sectionScore, totalScore, verdict } from "./score";
+import { isRecommended, lossWeight, SECTION_WEIGHTS, sectionScore, totalScore, verdict } from "./score";
 
 const SECURITY_IDS = (Object.keys(CHECKS) as CheckId[]).filter((id) => CHECKS[id].section === "security");
 
@@ -37,6 +37,16 @@ describe("sectionScore", () => {
   it("takes the whole weight for a problem and half for a warning", () => {
     expect(sectionScore(security({ https: "problem" }), "security")).toMatchObject({ value: 75 });
     expect(sectionScore(security({ hsts: "warning" }), "security")).toMatchObject({ value: 97 }); // 96.5, rounded up
+  });
+
+  it("takes a variant's own weight when it has one: several h1 lose as a recommendation", () => {
+    const seo = (h1: CheckResult) =>
+      (Object.keys(CHECKS) as CheckId[])
+        .filter((id) => CHECKS[id].section === "seo")
+        .map((id): CheckResult => (id === "h1" ? h1 : { id, outcome: "ok", found: [] }));
+    // h1 weighs 6: missing loses 3 (half of 6), several lose 1.5 (half of 3).
+    expect(sectionScore(seo({ id: "h1", outcome: "warning", variant: "none", found: [] }), "seo")).toMatchObject({ value: 97 });
+    expect(sectionScore(seo({ id: "h1", outcome: "warning", variant: "many", found: [] }), "seo")).toMatchObject({ value: 99 }); // 98.5, rounded up
   });
 
   it("gives 81 for the example: 19 points lost out of 100", () => {
@@ -135,5 +145,22 @@ describe("verdict", () => {
     [0, "critical"],
   ] as const)("%i is %s", (score, expected) => {
     expect(verdict(score)).toBe(expected);
+  });
+});
+
+describe("isRecommended", () => {
+  it.each([
+    [{ id: "csp", outcome: "warning" }, true],
+    [{ id: "sitemap", outcome: "warning", variant: "missing" }, true],
+    [{ id: "h1", outcome: "warning", variant: "many" }, true],
+    [{ id: "h1", outcome: "warning", variant: "none" }, false],
+    [{ id: "exposedVersions", outcome: "warning" }, false],
+    [{ id: "csp", outcome: "ok" }, false],
+  ] as const)("%o → %s", (result, expected) => {
+    expect(isRecommended({ ...result, found: [] })).toBe(expected);
+  });
+
+  it("uses the check's weight when the variant has none", () => {
+    expect(lossWeight({ id: "sitemap", outcome: "warning", variant: "missing", found: [] })).toBe(CHECKS.sitemap.weight);
   });
 });

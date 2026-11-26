@@ -138,6 +138,29 @@ describe("ScanReport", () => {
     expect(short).toContain("Il titolo della pagina è molto corto (5 caratteri)");
   });
 
+  it("labels low-weight warnings as Consigliato, in every section, and nothing else", () => {
+    const labelled = render({
+      ...report,
+      results: [
+        { id: "csp", outcome: "warning", found: [] },
+        { id: "sitemap", outcome: "warning", variant: "missing", found: [] },
+        { id: "h1", outcome: "warning", variant: "many", values: { count: "3" }, found: [] },
+        { id: "h1", outcome: "warning", variant: "none", found: [] },
+        { id: "canonical", outcome: "ok", found: [] },
+        { id: "hsts", outcome: "warning", found: [] },
+      ],
+    });
+    const items = [...labelled.matchAll(/<li id="check-(\w+)"[\s\S]*?<\/li>/g)].map((m) => [m[1], m[0].includes(">Consigliato<")]);
+    expect(items).toEqual([
+      ["csp", true],
+      ["hsts", false],
+      ["sitemap", true],
+      ["h1", true],
+      ["h1", false],
+      ["canonical", false],
+    ]);
+  });
+
   it("keeps technical details in a native disclosure", () => {
     expect(html.match(/<details/g)).toHaveLength(4);
     expect(text).toContain("http://esempio.it/menu → 200");

@@ -95,7 +95,7 @@ Dall'API di PageSpeed Insights (Lighthouse), per mobile:
 | `<meta name="description">`, 50–160 caratteri | Attenzione |
 | `<meta name="viewport">` | Problema |
 | `<html lang>` | Attenzione |
-| Un solo `<h1>` | Attenzione |
+| Un solo `<h1>` | Attenzione se manca, consigliato se ce n'è più di uno |
 | Tag Open Graph (`og:title`, `og:description`, `og:image`) | Consigliato |
 | `link rel="canonical"` | Consigliato |
 | `robots.txt` raggiungibile e che non blocca tutto | Attenzione |
@@ -105,7 +105,8 @@ Dall'API di PageSpeed Insights (Lighthouse), per mobile:
 
 Regole decise in M4:
 
-- **Pesi** (sommano a 100): `noindex` 20, title 18, viewport 18, description 10, `robots.txt` 10, lang 6, `h1` 6, sitemap 4, canonical 3, Open Graph 3, dati strutturati 2.
+- **Pesi** (sommano a 100): `noindex` 20, title 18, viewport 18, `robots.txt` 11, description 10, lang 6, `h1` 6, sitemap 3, canonical 3, Open Graph 3, dati strutturati 2.
+- **`h1`:** se manca, attenzione; se ce n'è più di uno, consigliato: la variante ha peso 3, perché Google li gestisce senza problemi ma un solo titolo principale aiuta chi usa un lettore di schermo.
 - I controlli SEO valgono anche sulla pagina letta in http: quello che legge Google non dipende da https.
 - **title e description:** si contano i caratteri come li vede chi legge (un'emoji è un carattere). Senza title: problema; fuori misura: attenzione. Description mancante, corta o lunga: attenzione, con un testo per ogni caso.
 - **`noindex`:** `noindex` o `none` in `<meta name="robots">`, in `<meta name="googlebot">` o nell'header `X-Robots-Tag`, anche con il prefisso `googlebot:`; quelli rivolti ad altri crawler non contano.
@@ -127,7 +128,7 @@ Regole decise in M4, per la parte dall'HTML:
 
 ### Pagine costruite nel browser
 
-Decise in M4. Una pagina con un contenitore dell'app vuoto (`#root`, `#app`, `#__next`, `#__nuxt`, `#___gatsby`, `#svelte`, `app-root`), almeno uno script e meno di 200 caratteri di testo visibile (senza script, stili, `<noscript>` e `<template>`) si costruisce nel browser. I controlli sul contenuto (`h1` e i tre di accessibilità) risultano "non verificato" con il motivo "La pagina si costruisce nel browser: YuSure non può leggerne il contenuto"; title, meta, header, `robots.txt` e sitemap restano controllati. La soglia è fissata da test su pagine di prova (React CSR vuota, Next con SSR, pagina statica, casi limite).
+Decise in M4. Una pagina con un contenitore dell'app vuoto (`#root`, `#app`, `#__next`, `#__nuxt`, `#___gatsby`, `#svelte`, `app-root`), almeno uno script e meno di 200 caratteri di testo visibile (senza script, stili, `<noscript>` e `<template>`) si costruisce nel browser. I controlli sul contenuto (`h1` e i tre di accessibilità) risultano "non verificato" con il motivo "La pagina si costruisce nel browser con JavaScript: YuSure non riesce a leggerne il contenuto. Non è un difetto del sito, è un limite di questa analisi."; title, meta, header, `robots.txt` e sitemap restano controllati. La soglia è fissata da test su pagine di prova (React CSR vuota, Next con SSR, pagina statica, casi limite).
 
 ## Punteggio
 
@@ -139,6 +140,7 @@ Decise in M4. Una pagina con un contenitore dell'app vuoto (`#root`, `#app`, `#_
 - **Copertura minima** (decisa in M3): se i controlli verificati di una sezione pesano meno della metà del peso totale della sezione, la sezione non ha né punteggio né giudizio. Il report scrive "Punteggio non disponibile" con il motivo: quanti controlli non si sono potuti eseguire, su quanti. Esattamente la metà basta. Caso che l'ha fatta nascere: `neverssl.com` il 2026-11-26, con https che chiude la connessione e http in timeout, aveva verificati solo i due controlli sul certificato (24 su 100) e risultava "100, Buono".
 - Giudizio, sul numero arrotondato: 90–100 Buono, 60–89 Da migliorare, sotto 60 Critico.
 - "Consigliato" non è un esito: nel report è un'attenzione con un peso basso. Gli esiti restano quattro.
+- **Etichetta "Consigliato"** (decisa in M4): un'attenzione di peso fino a 3 (soglia `RECOMMENDED_MAX_WEIGHT` nel catalogo) mostra "Consigliato" sotto "Attenzione", uguale in tutte le sezioni; i testi non cominciano con "Consigliato". Una variante può avere un peso suo, che sostituisce quello del controllo nei punti persi (oggi solo `h1` con più titoli). Con la soglia a 3 l'etichetta combacia con la gravità "Consigliato" di questa SPEC: CSP, `nosniff`, `Referrer-Policy`, `Permissions-Policy`, sitemap, canonical, Open Graph e dati strutturati.
 
 ## Fuori dalla v1
 

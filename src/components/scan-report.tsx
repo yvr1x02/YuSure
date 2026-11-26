@@ -7,6 +7,7 @@ import {
   OUTCOME_LABELS,
   CATALOG_VERSION,
   READ_OVER_HTTP_NOTE,
+  RECOMMENDED_LABEL,
   REPORT_TEXTS,
   SCORE_TEXTS,
   SECTION_LABELS,
@@ -17,7 +18,7 @@ import {
 } from "@/lib/checks/catalog";
 import type { CheckResult } from "@/lib/checks/result";
 import type { ScanReport as Report } from "@/lib/checks/scan";
-import { SECTION_WEIGHTS, verdict, type Score, type Scores, type Unscored } from "@/lib/checks/score";
+import { isRecommended, SECTION_WEIGHTS, verdict, type Score, type Scores, type Unscored } from "@/lib/checks/score";
 
 // Outcome is never colour alone: icon and word too (docs/DESIGN.md, WCAG 1.4.1).
 const OUTCOME_STYLE: Record<Outcome, { icon: string; className: string }> = {
@@ -138,7 +139,7 @@ function ResultItem({ result }: { result: CheckResult }) {
 
   return (
     <li id={`check-${result.id}`} className="flex scroll-mt-6 flex-col gap-2 border-t border-edge-subtle py-4 sm:flex-row sm:gap-6">
-      <p className={`flex shrink-0 items-center gap-2 self-start font-medium sm:w-40 ${style.className}`}>
+      <p className={`flex shrink-0 flex-wrap items-center gap-x-2 self-start font-medium sm:w-40 ${style.className}`}>
         <span
           aria-hidden="true"
           className="inline-flex size-6 items-center justify-center rounded-full border border-current text-sm"
@@ -146,6 +147,7 @@ function ResultItem({ result }: { result: CheckResult }) {
           {style.icon}
         </span>
         {OUTCOME_LABELS[result.outcome]}
+        {isRecommended(result) && <span className="w-full pl-8 text-sm font-normal text-ink-muted">{RECOMMENDED_LABEL}</span>}
       </p>
       <div className="flex min-w-0 flex-col gap-1">
         <h3 className="font-medium">{headlineOf(result)}</h3>

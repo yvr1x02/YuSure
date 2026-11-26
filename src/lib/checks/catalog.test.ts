@@ -12,6 +12,11 @@ describe("fillText", () => {
 });
 
 describe("check catalog", () => {
+  it("leaves the word Consigliato to the report label, never at the start of a text", () => {
+    const texts = (Object.values(CHECKS) as CheckDefinition[]).flatMap((c) => [...Object.values(c.texts), ...Object.values(c.variants ?? {})]);
+    for (const t of texts) expect(`${t!.headline} ${t!.explanation}`).not.toMatch(/Consigliato/i);
+  });
+
   it.each(["security", "seo", "accessibility"] as const)("%s weights add up to 100", (section) => {
     const weights = (Object.values(CHECKS) as CheckDefinition[]).filter((c) => c.section === section).map((c) => c.weight);
     expect(weights.reduce((a, b) => a + b, 0)).toBe(100);

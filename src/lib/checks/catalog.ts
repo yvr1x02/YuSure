@@ -13,6 +13,12 @@ export type Section = "security" | "performance" | "seo" | "accessibility";
 
 type Texts = { headline: string; explanation: string };
 
+/**
+ * Checks (or variants) weighing this much or less are "Consigliato": a low-weight warning,
+ * labelled the same way in every section (SPEC, "Punteggio").
+ */
+export const RECOMMENDED_MAX_WEIGHT = 3;
+
 export type CheckDefinition = {
   section: Section;
   /** Neutral name, used when the check could not run. */
@@ -22,8 +28,11 @@ export type CheckDefinition = {
   /** Points lost on a problem; a warning loses half (score.ts). Security weights add up to 100. */
   weight: number;
   texts: Partial<Record<Exclude<Outcome, "unverified">, Texts>>;
-  /** Texts for one cause of an outcome (CheckResult.variant), e.g. a title missing or too long. */
-  variants?: Record<string, Texts>;
+  /**
+   * Texts for one cause of an outcome (CheckResult.variant), e.g. a title missing or too long.
+   * A variant's own weight replaces the check's in the points it loses.
+   */
+  variants?: Record<string, Texts & { weight?: number }>;
   /** "Dettagli tecnici": what a passing site shows. */
   expected: string;
   docs: string;
@@ -318,7 +327,7 @@ export const CHECKS = {
       problem: {
         headline: "La pagina chiede ai motori di ricerca di non mostrarla",
         explanation:
-          "Con «noindex» Google la toglie dai risultati: chi cerca il locale non la trova. Capita che resti attivo per sbaglio dopo la costruzione del sito.",
+          "Con «noindex» Google la toglie dai risultati: chi cerca l'attività non la trova. Capita che resti attivo per sbaglio dopo la costruzione del sito.",
       },
     },
     expected: 'Nessun noindex o none nei <meta name="robots"> o "googlebot" né nell\'header X-Robots-Tag',
@@ -345,7 +354,7 @@ export const CHECKS = {
       short: {
         headline: "Il titolo della pagina è molto corto ({length} caratteri)",
         explanation:
-          "Un titolo di poche parole dice poco a chi cerca. Meglio qualcosa come «Trattoria da Mario – cucina romana a Testaccio».",
+          "Un titolo di poche parole dice poco a chi cerca. Meglio qualcosa come «Trattoria da Mario – cucina toscana ad Arezzo».",
       },
       long: {
         headline: "Il titolo della pagina è lungo ({length} caratteri)",
@@ -369,7 +378,7 @@ export const CHECKS = {
       problem: {
         headline: "La pagina non è impostata per i telefoni",
         explanation:
-          "Sul telefono si vede come un sito da computer rimpicciolito, da ingrandire con le dita. Google lo considera non adatto ai dispositivi mobili.",
+          "Sul telefono si vede come un sito da computer rimpicciolito, da ingrandire con le dita. Google valuta i siti guardando la versione per telefono, quindi conta anche per la posizione nei risultati.",
       },
     },
     expected: 'Un <meta name="viewport">, di solito con width=device-width, initial-scale=1',
@@ -410,7 +419,7 @@ export const CHECKS = {
     section: "seo",
     label: "File robots.txt",
     severity: "warning",
-    weight: 10,
+    weight: 11,
     texts: {
       ok: {
         headline: "Il file robots.txt c'è e lascia entrare i motori di ricerca",
@@ -475,9 +484,12 @@ export const CHECKS = {
         explanation:
           "Manca il titolo più importante (h1): Google e chi usa un lettore di schermo capiscono meno bene di cosa parla la pagina.",
       },
+      // Google copes with several h1: a recommendation, not a warning (decided in M4).
       many: {
-        headline: "La pagina ha {count} titoli principali invece di uno",
-        explanation: "Con più titoli principali (h1) non è chiaro quale sia l'argomento della pagina.",
+        headline: "La pagina ha {count} titoli principali",
+        explanation:
+          "Google li gestisce senza problemi, ma un solo titolo principale rende la pagina più chiara per chi usa un lettore di schermo.",
+        weight: RECOMMENDED_MAX_WEIGHT,
       },
     },
     expected: "Un solo <h1>",
@@ -488,7 +500,7 @@ export const CHECKS = {
     section: "seo",
     label: "Sitemap",
     severity: "warning",
-    weight: 4,
+    weight: 3,
     texts: {
       ok: {
         headline: "Il sito ha una sitemap",
@@ -523,7 +535,7 @@ export const CHECKS = {
       warning: {
         headline: "La pagina non indica il suo indirizzo principale",
         explanation:
-          "Consigliato: se la pagina si apre da più indirizzi (con e senza www, con parametri), Google può considerarli doppioni.",
+          "Se la pagina si apre da più indirizzi (con e senza www, con parametri), Google può considerarli doppioni.",
       },
     },
     expected: '<link rel="canonical" href="…">',
@@ -543,7 +555,7 @@ export const CHECKS = {
       warning: {
         headline: "Mancano informazioni per le anteprime nei social",
         explanation:
-          "Consigliato: quando il link si condivide su WhatsApp o sui social, l'anteprima può uscire senza immagine o con un testo a caso.",
+          "Quando il link si condivide su WhatsApp o sui social, l'anteprima può uscire senza immagine o con un testo a caso.",
       },
     },
     expected: "I meta Open Graph og:title, og:description e og:image",
@@ -558,14 +570,14 @@ export const CHECKS = {
     texts: {
       ok: {
         headline: "La pagina descrive l'attività in un formato che Google capisce",
-        explanation: "Con i dati strutturati Google può mostrare orari, indirizzo o recensioni direttamente nei risultati.",
+        explanation: "Con i dati strutturati Google capisce meglio nome, indirizzo, orari e tipo di attività.",
       },
     },
     variants: {
       missing: {
         headline: "La pagina non ha dati strutturati",
         explanation:
-          "Consigliato: con i dati strutturati Google può mostrare orari, indirizzo o recensioni nei risultati. Molti sistemi li aggiungono con un'estensione.",
+          "Con i dati strutturati Google capisce meglio nome, indirizzo, orari e tipo di attività.",
       },
       invalid: {
         headline: "I dati strutturati della pagina non si leggono",
@@ -653,6 +665,9 @@ export type CheckId = keyof typeof CHECKS;
 /** Saved with every report (ADR-0003). Raise it when a check starts measuring something different. */
 export const CATALOG_VERSION = 2;
 
+/** Next to "Attenzione" on low-weight warnings (RECOMMENDED_MAX_WEIGHT). */
+export const RECOMMENDED_LABEL = "Consigliato";
+
 export const OUTCOME_LABELS: Record<Outcome, string> = {
   ok: "Ok",
   warning: "Attenzione",
@@ -700,7 +715,8 @@ export const ERROR_MESSAGES: Record<
     "La pagina si è potuta leggere solo senza https, e questo controllo ha senso solo per la versione protetta del sito.",
   page_unreachable: "Non è stato possibile leggere la pagina, né in https né in http.",
   not_html: "L'indirizzo non porta a una pagina web (HTML), quindi non ci sono contenuti da controllare.",
-  client_rendered: "La pagina si costruisce nel browser: YuSure non può leggerne il contenuto.",
+  client_rendered:
+    "La pagina si costruisce nel browser con JavaScript: YuSure non riesce a leggerne il contenuto. Non è un difetto del sito, è un limite di questa analisi.",
   rate_limited: "Il sito ha chiesto a YuSure di rallentare (risposta 429), quindi il file non si è potuto leggere.",
 };
 
