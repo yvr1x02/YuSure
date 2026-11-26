@@ -6,7 +6,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - ogni nuova pagina entra nel controllo di accessibilità con axe (WCAG 2.2 AA) nello stesso commit che la aggiunge;
 - ogni controllo nuovo ha test unitari sui casi ok, attenzione, problema e non verificato.
 
-**Milestone attiva:** M4
+**Milestone attiva:** M5
 
 ## M0 — Fondamenta (completata il 2026-11-25)
 
@@ -98,10 +98,35 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
   - *La Server Action non è stata chiamata direttamente: con il form spento la Home non contiene il riferimento all'azione; il rifiuto resta coperto dai test unitari.*
 - Dopo `SCAN_ENABLED=true` in Production e il nuovo deploy: una scansione dell'utente salvata nel database production e la richiesta contata in `scan_requests`. *Verificato il 2026-11-26 dall'utente: scansioni in produzione di `yusure.vercel.app`, `anime-tracker-three.vercel.app` e `gemmahandmade.it`, report aperti; dal SQL Editor di Neon sul branch production, in `scans` le tre righe con quelle `cache_key` e in `scan_requests` 3 righe. Non ricontrollato da Claude.*
 
-## M4 — SEO e accessibilità dall'HTML
+## M4 — SEO e accessibilità dall'HTML (completata il 2026-11-26)
 
 - Controlli SEO della SPEC, compresi `robots.txt` e `sitemap.xml`.
 - Controlli di accessibilità dall'HTML.
+- Decisioni del 2026-11-26 (regole in SPEC, "SEO", "Accessibilità", "Pagine costruite nel browser" e "Punteggio"):
+  - Sistemazioni da M3: "Come funziona" senza "in costruzione", con i controlli che non ci sono ancora segnati "(in arrivo)" (velocità e contrasto fino a M5); tabella di ADR-0003 allineata allo schema reale; nota sui report fatti con un catalogo precedente.
+  - Pesi SEO (sitemap 3 e `robots.txt` 11 come ribilanciamento proposto da Claude, approvato) e di accessibilità; immagini senza `alt` e link senza nome: 1–2 attenzione, da 3 problema; un campo senza etichetta: problema.
+  - `robots.txt`: 5xx problema, 4xx come mancante, 429 non verificato, blocco totale problema; regole di Google per gruppi e nomi dei crawler. Sitemap: la prima indicata in `robots.txt`, altrimenti `/sitemap.xml`.
+  - Pagine costruite nel browser riconosciute (contenitore dell'app vuoto, script, meno di 200 caratteri di testo): controlli sul contenuto non verificati.
+  - Etichetta "Consigliato" per le attenzioni di peso fino a 3, uguale in tutte le sezioni; più `h1` è un consigliato con peso suo.
+  - Con `noindex` o un `robots.txt` che blocca tutto, la SEO non supera 40, con una frase nel report.
+  - Catalogo dei controlli alla versione 2; documentazione anche da Google Search e ogp.me (deviazione dalla SPEC, proposta in M4).
+
+**Verifiche del 2026-11-26 su M4 (branch `m4`):**
+- In locale, Postgres 18 in un container, su `b98e9bc`: lint e typecheck puliti; Vitest 549 su 549; e2e 27 su 27 (axe sul report v2 e sul v1, sezioni SEO e Accessibilità, nota sul catalogo precedente); build con `/report/[id]` in Partial Prerender. I 14 link di documentazione nuovi rispondono 200.
+- CI su GitHub (`workflow_dispatch`): verde su `0cce906` (run 45854128082) e su `0c8bd39` (run 45854723039, 544 unitari, 27 e2e). `b98e9bc` e il commit di chiusura si verificano con la PR.
+- Anteprima di `0cce906` (fra1, database preview), scansioni dalla Home:
+  - `yusure.vercel.app`: Sicurezza 100, SEO 80, Accessibilità 100; title corto, `robots.txt` assente, sitemap, canonical, Open Graph e JSON-LD mancanti (consigliati);
+  - `anime-tracker-three.vercel.app`: Sicurezza 94, SEO 89, Accessibilità 100; `robots.txt` con `Disallow: /`, voluto dal progetto (con le regole di `b98e9bc` diventa un problema e la SEO non supera 40);
+  - `gemmahandmade.it`: Sicurezza 83, SEO 100, Accessibilità 100; da http non porta a https, verificato con curl (`http://gemmahandmade.it/` risponde 200, senza redirect); HSTS assente;
+  - dalla prova due difetti nei dettagli tecnici, corretti in `0c8bd39`: un `<br>` nell'h1 sparito ("Autunno2026") e "Immagini: 0, tutte con alt";
+  - non provati su un sito reale: pagina costruita nel browser, campi senza etichetta, immagini senza `alt`, `robots.txt` in 5xx o 429 (solo test unitari);
+  - nei log dell'anteprima nessun errore dell'app, solo l'avviso SSL di `pg` (ADR-0001).
+- Pulizia dopo la prova, fatta dall'utente: deploy dell'anteprima con il link di condivisione cancellato, report di prova rimossi dal database preview.
+
+**Da verificare dopo il merge di M4:**
+- La CI sul push in `main` della merge finisce verde.
+- In produzione una scansione mostra le sezioni SEO e Accessibilità, e un report fatto prima di M4 la nota sul catalogo precedente.
+- `/come-funziona` in produzione: velocità e contrasto "(in arrivo)", SEO e accessibilità senza.
 
 ## M5 — Performance con PageSpeed
 
@@ -129,6 +154,8 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Miglioramento possibile: CSP di YuSure con un nonce generato da `proxy.ts`, senza `'unsafe-inline'` negli script. Costi: tutte le pagine dinamiche, niente cache CDN per l'HTML, incompatibile con il Partial Prerendering, quindi va rivista ADR-0004.
 - README finale con screenshot, link alla produzione e il racconto della protezione SSRF.
 - `sslmode=verify-full` nelle stringhe di connessione, prima di aggiornare `pg` alla versione maggiore successiva (ADR-0001).
+- SEO di YuSure stesso, emersa dalla prova di M4: title più lungo di "YuSure", `robots.txt`, sitemap, canonical, Open Graph e dati strutturati (JSON-LD).
+- Prova su un sito reale costruito nel browser (React o Vue senza SSR): in M4 il riconoscimento è coperto solo dai test su pagine di prova.
 
 ## Dopo la v1
 
