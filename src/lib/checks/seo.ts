@@ -78,7 +78,9 @@ export function evaluateH1(page: Page): CheckResult {
     "h1",
     page,
     ($) => {
-      const headings = $("h1").map((_, el) => `<h1>: "${clean($(el).text()) || "(vuoto)"}"`).get();
+      // A clone with <br> as spaces: "Autunno<br>2026" reads "Autunno 2026", and the page stays as it is.
+      const text = (el: Parameters<typeof $>[0]) => clean($(el).clone().find("br").replaceWith(" ").end().text());
+      const headings = $("h1").map((_, el) => `<h1>: "${text(el) || "(vuoto)"}"`).get();
       if (headings.length === 1) return { id: "h1", outcome: "ok", found: headings };
       if (headings.length === 0) return { id: "h1", outcome: "warning", variant: "none", found: ["Nessun <h1>"] };
       const values = { count: String(headings.length) };

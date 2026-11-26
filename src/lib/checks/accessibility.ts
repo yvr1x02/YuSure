@@ -37,7 +37,8 @@ function describe(node: Selection, attributes: string[]): string {
   return `<${tag}${shown.join("")}>`;
 }
 
-function counted(id: "imageAlt" | "accessibleNames", missing: string[], total: number, allNamed: string): CheckResult {
+function counted(id: "imageAlt" | "accessibleNames", missing: string[], total: number, allNamed: string, none: string): CheckResult {
+  if (total === 0) return { id, outcome: "ok", found: [none] };
   if (missing.length === 0) return { id, outcome: "ok", found: [allNamed] };
   const found = missing.slice(0, MAX_LISTED);
   if (missing.length > MAX_LISTED) found.push(`…e altri ${missing.length - MAX_LISTED}`);
@@ -52,7 +53,7 @@ export function evaluateImageAlt(page: Page): CheckResult {
       // alt="" is right for decoration; role presentation/none says the same.
       const images = $("img").filter((_, el) => !hidden($(el)) && !["presentation", "none"].includes($(el).attr("role") ?? ""));
       const missing = images.filter((_, el) => $(el).attr("alt") === undefined).map((_, el) => describe($(el), ["src"])).get();
-      return counted("imageAlt", missing, images.length, `Immagini: ${images.length}, tutte con alt`);
+      return counted("imageAlt", missing, images.length, `Immagini: ${images.length}, tutte con alt`, "Nessuna immagine nella pagina");
     },
     { content: true },
   );
@@ -101,7 +102,7 @@ export function evaluateAccessibleNames(page: Page): CheckResult {
           clean(control.find("svg title").text())
         );
       const missing = controls.filter((_, el) => !named($(el))).map((_, el) => describe($(el), ["href", "class"])).get();
-      return counted("accessibleNames", missing, controls.length, `Link e pulsanti: ${controls.length}, tutti con un nome`);
+      return counted("accessibleNames", missing, controls.length, `Link e pulsanti: ${controls.length}, tutti con un nome`, "Nessun link o pulsante nella pagina");
     },
     { content: true },
   );

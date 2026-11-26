@@ -102,6 +102,10 @@ describe("evaluateH1", () => {
     expect(result.variant).toBe(variant);
   });
 
+  it("reads a line break as a space in the details", () => {
+    expect(evaluateH1(html("", "<h1>Autunno<br/>2026</h1>")).found).toEqual(['<h1>: "Autunno 2026"']);
+  });
+
   it("says how many headings there are", () => {
     expect(evaluateH1(html("", "<h1>Uno</h1><h1>Due</h1>")).values).toEqual({ count: "2" });
   });

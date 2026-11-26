@@ -23,6 +23,11 @@ describe("evaluateImageAlt", () => {
     expect(evaluateImageAlt(page)).toMatchObject({ outcome: "ok", found: ["Immagini: 1, tutte con alt"] });
   });
 
+  it("says so when the page has no images, or no links and buttons", () => {
+    expect(evaluateImageAlt(body("<p>Solo testo</p>")).found).toEqual(["Nessuna immagine nella pagina"]);
+    expect(evaluateAccessibleNames(body("<p>Solo testo</p>")).found).toEqual(["Nessun link o pulsante nella pagina"]);
+  });
+
   it("lists the images, at most 10, with a count", () => {
     const result = evaluateImageAlt(body(times(12, '<img src="/foto.jpg">')));
     expect(result.found[0]).toBe("12 su 12");
