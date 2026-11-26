@@ -106,6 +106,7 @@ function ReportSection({ section, score, results }: { section: Section; score: S
             <span className="sr-only"> su 100, </span>
             <span className="font-display text-2xl font-light">{VERDICT_LABELS[verdict(score.value)]}</span>
           </p>
+          {score.capped && <p className="max-w-text">{SCORE_TEXTS.capped}</p>}
           {score.partial && <p className="text-ink-muted">{SCORE_TEXTS.partial}</p>}
         </>
       ) : (

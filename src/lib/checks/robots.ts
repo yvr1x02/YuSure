@@ -68,7 +68,8 @@ export function evaluateRobots(result: SafeResponse | SafeRequestError, url: URL
   const robots = parseRobots(result.body.toString("utf8"));
   const group = robots.agent ? `regole per User-agent: ${robots.agent === "*" ? "*" : "Googlebot"}` : "nessuna regola per Googlebot";
   const found = [status, group, ...robots.rules.slice(0, 5).map((r) => `${r.allow ? "Allow" : "Disallow"}: ${r.path}`)];
-  return blocksAll(robots) ? { id, outcome: "warning", variant: "blocksAll", found } : { id, outcome: "ok", found };
+  // Blocking Google everywhere is a problem, and it caps the SEO score (decided in M4).
+  return blocksAll(robots) ? { id, outcome: "problem", variant: "blocksAll", found } : { id, outcome: "ok", found };
 }
 
 /** The first Sitemap line of robots.txt that is an http(s) address, otherwise /sitemap.xml. */

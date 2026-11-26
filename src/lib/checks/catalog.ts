@@ -733,8 +733,24 @@ export const VERDICT_LABELS: Record<Verdict, string> = {
   critical: "Critico",
 };
 
+/**
+ * Results that keep Google away from the page: whatever the rest, the section's score
+ * cannot pass `max` (decided in M4). A result matches on its outcome, or on its variant.
+ */
+export const SCORE_CAPS: Partial<Record<Section, { max: number; when: { id: CheckId; outcome?: Outcome; variant?: string }[] }>> = {
+  seo: {
+    max: 40,
+    when: [
+      { id: "noindex", outcome: "problem" },
+      { id: "robotsTxt", variant: "blocksAll" },
+    ],
+  },
+};
+
 export const SCORE_TEXTS = {
   urgent: "Da sistemare subito",
+  capped:
+    "Il punteggio non può superare 40: finché la pagina chiede a Google di non mostrarla, o il sito gli vieta di visitarlo, il resto conta poco.",
   partial: "Punteggio parziale: i controlli non verificati non sono contati.",
   unavailable:
     "Punteggio non disponibile: troppi controlli non si sono potuti eseguire ({unverified} su {checks}) per dare un voto affidabile.",

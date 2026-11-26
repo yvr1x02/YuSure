@@ -73,8 +73,8 @@ describe("evaluateRobots", () => {
     });
   });
 
-  it("warns when it blocks everything", () => {
-    expect(evaluateRobots(answer(200, "User-agent: *\nDisallow: /\n"), robotsAt)).toMatchObject({ outcome: "warning", variant: "blocksAll" });
+  it("is a problem when it blocks everything", () => {
+    expect(evaluateRobots(answer(200, "User-agent: *\nDisallow: /\n"), robotsAt)).toMatchObject({ outcome: "problem", variant: "blocksAll" });
   });
 
   it.each([404, 403, 410])("warns that it is missing on %i", (status) => {

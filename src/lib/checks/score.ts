@@ -1,4 +1,4 @@
-import { CHECKS, RECOMMENDED_MAX_WEIGHT, type CheckDefinition, type Outcome, type Section } from "./catalog";
+import { CHECKS, RECOMMENDED_MAX_WEIGHT, SCORE_CAPS, type CheckDefinition, type Outcome, type Section } from "./catalog";
 import type { CheckResult } from "./result";
 
 /*
@@ -6,7 +6,8 @@ import type { CheckResult } from "./result";
  * Unverified checks leave the count: the score is on the others, and says it is partial.
  */
 
-export type Score = { value: number; partial: boolean };
+/** capped: a result keeps the score at SCORE_CAPS' maximum, whatever the rest (noindex, robots.txt blocking all). */
+export type Score = { value: number; partial: boolean; capped?: true };
 /** No score: the checks that ran weigh less than half of the section (decided in M3). */
 export type Unscored = { unverified: number; checks: number };
 export type Verdict = "good" | "improve" | "critical";
@@ -44,7 +45,12 @@ export function sectionScore(results: CheckResult[], section: Section): Score | 
   }
   // possible - lost is a whole or half number: exact, unlike 1 - lost / possible.
   const value = Math.round((100 * (possible - lost)) / possible);
-  return { value, partial: inSection.some((r) => r.outcome === "unverified") };
+  const partial = inSection.some((r) => r.outcome === "unverified");
+  const cap = SCORE_CAPS[section];
+  const capped = cap?.when.some((rule) =>
+    inSection.some((r) => r.id === rule.id && (rule.outcome ?? r.outcome) === r.outcome && (rule.variant ?? r.variant) === r.variant),
+  );
+  return cap && capped ? { value: Math.min(value, cap.max), partial, capped: true } : { value, partial };
 }
 
 /**

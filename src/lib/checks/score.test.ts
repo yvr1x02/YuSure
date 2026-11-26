@@ -164,3 +164,34 @@ describe("isRecommended", () => {
     expect(lossWeight({ id: "sitemap", outcome: "warning", variant: "missing", found: [] })).toBe(CHECKS.sitemap.weight);
   });
 });
+
+describe("SEO cap (decided in M4)", () => {
+  const SEO_IDS = (Object.keys(CHECKS) as CheckId[]).filter((id) => CHECKS[id].section === "seo");
+  const seo = (...overrides: CheckResult[]) =>
+    SEO_IDS.map((id): CheckResult => overrides.find((r) => r.id === id) ?? { id, outcome: "ok", found: [] });
+
+  it("keeps the score at 40 with noindex, which alone would leave 80", () => {
+    expect(sectionScore(seo({ id: "noindex", outcome: "problem", found: [] }), "seo")).toEqual({ value: 40, partial: false, capped: true });
+  });
+
+  it("keeps the score at 40 when robots.txt blocks everything", () => {
+    const blocked = seo({ id: "robotsTxt", outcome: "problem", variant: "blocksAll", found: [] });
+    expect(sectionScore(blocked, "seo")).toEqual({ value: 40, partial: false, capped: true });
+  });
+
+  it("leaves a lower score as it is, still saying why it cannot rise", () => {
+    const worse = seo(
+      { id: "noindex", outcome: "problem", found: [] },
+      { id: "title", outcome: "problem", found: [] },
+      { id: "viewport", outcome: "problem", found: [] },
+      { id: "robotsTxt", outcome: "problem", variant: "serverError", found: [] },
+    );
+    // 20 + 18 + 18 + 11 = 67 lost: 33, already under the cap.
+    expect(sectionScore(worse, "seo")).toEqual({ value: 33, partial: false, capped: true });
+  });
+
+  it("does not cap for other robots.txt problems, nor in other sections", () => {
+    expect(sectionScore(seo({ id: "robotsTxt", outcome: "problem", variant: "serverError", found: [] }), "seo")).toEqual({ value: 89, partial: false });
+    expect(sectionScore(security({ https: "problem" }), "security")).not.toHaveProperty("capped");
+  });
+});

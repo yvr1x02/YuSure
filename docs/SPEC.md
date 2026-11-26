@@ -98,19 +98,19 @@ Dall'API di PageSpeed Insights (Lighthouse), per mobile:
 | Un solo `<h1>` | Attenzione se manca, consigliato se ce n'è più di uno |
 | Tag Open Graph (`og:title`, `og:description`, `og:image`) | Consigliato |
 | `link rel="canonical"` | Consigliato |
-| `robots.txt` raggiungibile e che non blocca tutto | Attenzione |
+| `robots.txt` raggiungibile e che non blocca tutto | Attenzione se manca; problema se blocca tutto o risponde 5xx |
 | `sitemap.xml` raggiungibile (anche se indicata in `robots.txt`) | Consigliato |
 | Dati strutturati schema.org (JSON-LD) | Consigliato |
 | La pagina non è esclusa dai motori (`noindex`) | Problema |
 
 Regole decise in M4:
 
-- **Pesi** (sommano a 100): `noindex` 20, title 18, viewport 18, `robots.txt` 11, description 10, lang 6, `h1` 6, sitemap 3, canonical 3, Open Graph 3, dati strutturati 2.
+- **Pesi** (sommano a 100): `noindex` 20, title 18, viewport 18, `robots.txt` 11, description 10, lang 6, `h1` 6, sitemap 3, canonical 3, Open Graph 3, dati strutturati 2. Sitemap 3 e `robots.txt` 11 sono un ribilanciamento proposto da Claude per la soglia dei consigliati (prima 4 e 10), approvato in M4.
 - **`h1`:** se manca, attenzione; se ce n'è più di uno, consigliato: la variante ha peso 3, perché Google li gestisce senza problemi ma un solo titolo principale aiuta chi usa un lettore di schermo.
 - I controlli SEO valgono anche sulla pagina letta in http: quello che legge Google non dipende da https.
 - **title e description:** si contano i caratteri come li vede chi legge (un'emoji è un carattere). Senza title: problema; fuori misura: attenzione. Description mancante, corta o lunga: attenzione, con un testo per ogni caso.
 - **`noindex`:** `noindex` o `none` in `<meta name="robots">`, in `<meta name="googlebot">` o nell'header `X-Robots-Tag`, anche con il prefisso `googlebot:`; quelli rivolti ad altri crawler non contano.
-- **`robots.txt`:** si legge dall'host della pagina, dopo i redirect. Vale il gruppo di Googlebot, altrimenti quello di `*`. "Blocca tutto" se ha `Disallow: /` (o `/*`) e nessun `Allow` con un percorso: attenzione. Se risponde 4xx: attenzione, come se mancasse (Google allora visita tutto). Se risponde 5xx: **problema**, con un testo dedicato: Google smette di visitare il sito per 12 ore e poi, fino a 30 giorni, usa l'ultima copia buona del file. Se risponde 429 (il sito chiede di rallentare, forse solo a YuSureBot) o la richiesta non riesce: non verificato. Un gruppo `User-agent` finisce solo con una regola `Allow`/`Disallow`, non con `Sitemap`; `Googlebot/1.2` e `googlebot*` valgono come `googlebot`. Fonte: [How Google interprets the robots.txt specification](https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt), letta il 2026-11-26.
+- **`robots.txt`:** si legge dall'host della pagina, dopo i redirect. Vale il gruppo di Googlebot, altrimenti quello di `*`. "Blocca tutto" se ha `Disallow: /` (o `/*`) e nessun `Allow` con un percorso: **problema** (deciso in M4), e il punteggio SEO non supera 40 (vedi "Punteggio"). Se risponde 4xx: attenzione, come se mancasse (Google allora visita tutto). Se risponde 5xx: **problema**, con un testo dedicato: Google smette di visitare il sito per 12 ore e poi, fino a 30 giorni, usa l'ultima copia buona del file. Se risponde 429 (il sito chiede di rallentare, forse solo a YuSureBot) o la richiesta non riesce: non verificato. Un gruppo `User-agent` finisce solo con una regola `Allow`/`Disallow`, non con `Sitemap`; `Googlebot/1.2` e `googlebot*` valgono come `googlebot`. Fonte: [How Google interprets the robots.txt specification](https://developers.google.com/search/docs/crawling-indexing/robots/robots_txt), letta il 2026-11-26.
 - **Sitemap:** la prima riga `Sitemap:` di `robots.txt` con un indirizzo http(s), altrimenti `/sitemap.xml`; una sola richiesta. Ok se risponde 200 con `<urlset>` o `<sitemapindex>` (anche compressa con gzip); un'altra risposta è un'attenzione, con un testo diverso se l'indirizzo risponde con qualcosa che non è una sitemap.
 - **Dati strutturati:** almeno un blocco JSON-LD leggibile; se ci sono ma nessuno si legge, attenzione con un testo dedicato.
 
@@ -137,6 +137,7 @@ Decise in M4. Una pagina con un contenitore dell'app vuoto (`#root`, `#app`, `#_
 - Performance e Accessibilità usano il punteggio di Lighthouse, corretto dai controlli propri dove ci sono.
 - Il punteggio totale è la media pesata delle quattro sezioni: Sicurezza 35%, Performance 25%, SEO 25%, Accessibilità 15%. Si calcola dai punteggi delle sezioni già arrotondati; una sezione senza punteggio esce dalla media, i pesi delle altre si ricalcolano e il totale è parziale. Se le sezioni con un punteggio pesano meno della metà (meno di 50 su 100), niente totale. Si mostra da M5, quando ci sono tutte le sezioni.
 - I controlli "non verificati" non contano: il punteggio si calcola sugli altri e il report dice che è parziale.
+- **Tetto della SEO** (deciso in M4): con `noindex`, o con un `robots.txt` che blocca tutto, il punteggio SEO non supera 40 (Critico), qualunque sia il resto, e il report spiega perché sotto il punteggio. Un punteggio già più basso resta com'è. Le regole stanno in `SCORE_CAPS` nel catalogo.
 - **Copertura minima** (decisa in M3): se i controlli verificati di una sezione pesano meno della metà del peso totale della sezione, la sezione non ha né punteggio né giudizio. Il report scrive "Punteggio non disponibile" con il motivo: quanti controlli non si sono potuti eseguire, su quanti. Esattamente la metà basta. Caso che l'ha fatta nascere: `neverssl.com` il 2026-11-26, con https che chiude la connessione e http in timeout, aveva verificati solo i due controlli sul certificato (24 su 100) e risultava "100, Buono".
 - Giudizio, sul numero arrotondato: 90–100 Buono, 60–89 Da migliorare, sotto 60 Critico.
 - "Consigliato" non è un esito: nel report è un'attenzione con un peso basso. Gli esiti restano quattro.

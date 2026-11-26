@@ -161,6 +161,17 @@ describe("ScanReport", () => {
     ]);
   });
 
+  it("explains a capped score", () => {
+    const capped = renderToStaticMarkup(
+      createElement(ScanReport, {
+        report: { ...report, results: [...report.results, { id: "noindex", outcome: "problem", found: [] }] },
+        scores: { security: { value: 71, partial: true }, seo: { value: 0, partial: false, capped: true } },
+      }),
+    );
+    expect(capped).toContain("Il punteggio non può superare 40");
+    expect(html).not.toContain("non può superare");
+  });
+
   it("keeps technical details in a native disclosure", () => {
     expect(html.match(/<details/g)).toHaveLength(4);
     expect(text).toContain("http://esempio.it/menu → 200");
