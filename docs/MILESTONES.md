@@ -35,7 +35,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 
 **Da verificare dopo il merge di M1:**
 - In produzione la Home mostra "YuSure è in costruzione" senza il form, e la Server Action rifiuta le richieste: `SCAN_ENABLED` non è impostata per Production. *Verificato il 2026-11-26: il deploy di produzione è quello della merge della PR #5 (`494d09b`); `https://yusure.vercel.app/` ha la frase "in costruzione" e nessun `<form>` né `<input>`; una chiamata diretta alla Server Action `scan` (ID letto dal JavaScript pubblico) con `example.com` risponde `{"status":"error","message":"YuSure è in costruzione: le scansioni arrivano a breve."}`.*
-- In anteprima, con `SCAN_ENABLED=true` per Preview, una scansione vera da Vercel (fra1) completa i quattro controlli.
+- In anteprima, con `SCAN_ENABLED=true` per Preview, una scansione vera da Vercel (fra1) completa i quattro controlli. *Parziale il 2026-11-26: sull'anteprima di `8a08417` l'utente ha completato una scansione fino al report (link `#check-httpRedirect` del riepilogo "Da sistemare subito"); il dettaglio dei singoli controlli non è stato registrato.*
 
 ## M2 — Sicurezza completa e punteggio (completata il 2026-11-26)
 
@@ -47,9 +47,9 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Istruzioni per impostare la protezione di `main` (si entra solo con una PR e i controlli verdi); la imposta l'utente su GitHub.
 
 **Da verificare dopo il merge di M2:**
-- La CI parte sul push in `main` della merge e finisce verde.
-- Protezione di `main` impostata seguendo il README: un `git push` diretto su `main` viene rifiutato.
-- In produzione la Home resta "in costruzione" e la Server Action rifiuta le richieste (`SCAN_ENABLED` spenta fino a M3).
+- La CI parte sul push in `main` della merge e finisce verde. *Verificato il 2026-11-26: run del push di `5cf113a` (merge della PR #6) verde, job `checks` in 60 s.*
+- Protezione di `main` impostata seguendo il README: un `git push` diretto su `main` viene rifiutato. *Verificato il 2026-11-26 dalle API, non con un push: ruleset `main` (id 28153949) creato via API secondo il README, enforcement `active`, bypass list vuota; `GET rules/branches/main` restituisce `deletion`, `pull_request` (0 approvazioni), `required_status_checks` (`checks` da GitHub Actions, branch aggiornato) e `non_fast_forward`, con `current_user_can_bypass: never`. Il push diretto non è stato provato, per non rischiare di modificare `main`.*
+- In produzione la Home resta "in costruzione" e la Server Action rifiuta le richieste (`SCAN_ENABLED` spenta fino a M3). *Verificato il 2026-11-26 sul deploy di `5cf113a`: frase "in costruzione", nessun `<form>` né `<input>`; la Server Action `scan`, chiamata direttamente con `example.com`, risponde "YuSure è in costruzione: le scansioni arrivano a breve."*
 
 ## M3 — Salvataggio, link e limiti
 
@@ -65,6 +65,12 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
   - SPEC: sezione "Limiti noti", con gli `url(http://…)` nel CSS.
   - Header di sicurezza di YuSure in `next.config.ts`: `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` e una CSP fissa, senza nonce (le pagine restano statiche, ADR-0004 non cambia), con la toolbar di Vercel permessa solo in anteprima.
   - Copertura minima del punteggio: se i controlli verificati pesano meno di metà della sezione, niente punteggio né giudizio; stessa regola per il totale (SPEC, "Punteggio").
+
+**Verifiche del 2026-11-26 sulla prima parte di M3 (PR #7, merge `bd99242`):**
+- Anteprima di `8a08417`, prova dell'utente: la toolbar di Vercel si carica e apre i commenti, nessun errore CSP in console, l'header `Content-Security-Policy` è quello previsto per Preview (con `https://vercel.live`).
+- La PR #7, dopo il rebase su `main`, mostra solo i 6 commit di M3 e 18 file; CI verde su `8a08417` (71 s) e sul push in `main` di `bd99242` (64 s).
+- Produzione, deploy di `bd99242`: `/` e `/come-funziona` mandano CSP, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy` e `X-Frame-Options`; la CSP non contiene `vercel.live` e la toolbar non c'è; la Home resta "in costruzione" e la Server Action rifiuta le richieste.
+- Branch `m2` e `m3` cancellati dopo il merge, in locale e su GitHub.
 
 ## M4 — SEO e accessibilità dall'HTML
 
