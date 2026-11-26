@@ -1,7 +1,10 @@
 import { expect, test } from "@playwright/test";
 
+import { FRESH_REPORT_ID } from "./fixtures";
+
 // YuSure sends the headers it checks on other sites.
-for (const path of ["/", "/come-funziona"]) {
+
+for (const path of ["/", "/come-funziona", `/report/${FRESH_REPORT_ID}`]) {
   test(`${path} sends the security headers`, async ({ request }) => {
     const headers = (await request.get(path)).headers();
     expect(headers).toMatchObject({
