@@ -89,8 +89,14 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Pulizia dopo la prova: report e richieste di prova cancellati dal database preview; `SCAN_LIMIT_DAILY`, i due deploy di prova con il link di condivisione e `.env.preview.local` cancellati dall'utente.
 
 **Da verificare dopo il merge di M3:**
-- Produzione con le scansioni ancora spente: Home "in costruzione", `/report/<id inesistente>` con `noindex`, header di sicurezza.
-- Dopo `SCAN_ENABLED=true` in Production e il nuovo deploy: una scansione dell'utente salvata nel database production e la richiesta contata in `scan_requests`.
+- La CI parte sul push in `main` della merge e finisce verde. *Verificato il 2026-11-26: run 45848146899 del push di `b94442f` (merge della PR #8) verde in 86 s, e2e 25 su 25.*
+- Produzione con le scansioni ancora spente: Home "in costruzione", `/report/<id inesistente>` con `noindex`, header di sicurezza. *Verificato il 2026-11-26 sul deploy di `b94442f` (`yusure.vercel.app`, fra1):*
+  - *`/`: 200, "in costruzione", nessun `<form>`; `/come-funziona`: 200;*
+  - *su tutte le pagine CSP con `frame-ancestors 'none'` e senza `vercel.live`, `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` e HSTS;*
+  - *`/report/AAAAAAAAAAAAAAAAAAAAAA` (id valido, quindi una query vera sul database production) e `/report/sconosciuto` (id non valido, nessuna query): 200, "Report non trovato", `X-Robots-Tag: noindex` e meta `noindex` (ADR-0003);*
+  - *`/api/cron/pulizia` senza segreto o con un segreto sbagliato: 401.*
+  - *La Server Action non è stata chiamata direttamente: con il form spento la Home non contiene il riferimento all'azione; il rifiuto resta coperto dai test unitari.*
+- Dopo `SCAN_ENABLED=true` in Production e il nuovo deploy: una scansione dell'utente salvata nel database production e la richiesta contata in `scan_requests`. *Verificato il 2026-11-26 dall'utente: scansioni in produzione di `yusure.vercel.app`, `anime-tracker-three.vercel.app` e `gemmahandmade.it`, report aperti; dal SQL Editor di Neon sul branch production, in `scans` le tre righe con quelle `cache_key` e in `scan_requests` 3 righe. Non ricontrollato da Claude.*
 
 ## M4 — SEO e accessibilità dall'HTML
 
