@@ -63,7 +63,8 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
   - Connessione chiusa dal sito prima di qualsiasi risposta https (`connection_reset`): "Il sito risponde in HTTPS" è un problema se http sullo stesso host risponde, altrimenti non verificato; il timeout resta non verificato (SPEC).
   - La regola ESLint su cheerio e undici copre anche gli `import()` dinamici.
   - SPEC: sezione "Limiti noti", con gli `url(http://…)` nel CSS.
-  - Header di sicurezza di YuSure in `next.config.ts`: `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options`. La CSP (con nonce dal proxy o senza) è da decidere.
+  - Header di sicurezza di YuSure in `next.config.ts`: `X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`, `X-Frame-Options` e una CSP fissa, senza nonce (le pagine restano statiche, ADR-0004 non cambia), con la toolbar di Vercel permessa solo in anteprima.
+  - Copertura minima del punteggio: se i controlli verificati pesano meno di metà della sezione, niente punteggio né giudizio; stessa regola per il totale (SPEC, "Punteggio").
 
 ## M4 — SEO e accessibilità dall'HTML
 
@@ -80,16 +81,20 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 ## M6 — Passata di stile
 
 - Revisione dell'aspetto di Home, Report e Come funziona rispetto a `docs/DESIGN.md`.
+- Barra del punteggio prevista in `docs/DESIGN.md` ("Movimento"): sotto il numero fermo, si riempie una volta in 700 ms (`--duration-reveal`); con `prefers-reduced-motion` niente riempimento animato.
 - Stati di caricamento, errori e casi limite curati.
 - Firma "Un progetto di Yuri Impellizzeri" in fondo al report, con link al portfolio, senza invito a proporre lavori (ADR-0003).
 - Nuova palette, da decidere insieme partendo dai colori di stato; poi aggiornare `docs/DESIGN.md`.
 - Sfondo dinamico a tutta pagina con codice che si scrive: in Home gli header di risposta reali di YuSure; durante la scansione le richieste e le risposte del sito analizzato; nel report si ferma o resta appena visibile. Vincoli: pulsante di pausa (WCAG 2.2.2), fermo con `prefers-reduced-motion`, contrasto del testo misurato con lo sfondo attivo, prestazioni misurate con la CPU rallentata 4×. Cambia la direzione visiva approvata (`docs/DESIGN.md`, "Movimento"): va aggiornata prima di scriverlo.
+
+**Da decidere prima di M7:** una CSP con `'unsafe-inline'` negli script diventa "attenzione" (da migliorare) invece di "ok"? Oggi il controllo guarda solo se la CSP c'è, mentre securityheaders.com penalizza `'unsafe-inline'`.
 
 ## M7 — Rifinitura
 
 - Accessibilità, telefono a 320px, stati vuoti e di errore.
 - Prova su una decina di siti reali di tipo diverso, con i risultati confrontati a mano.
 - Su alcuni di quei siti, confronto dei risultati con securityheaders.com e PageSpeed Insights, con le differenze spiegate.
+- Miglioramento possibile: CSP di YuSure con un nonce generato da `proxy.ts`, senza `'unsafe-inline'` negli script. Costi: tutte le pagine dinamiche, niente cache CDN per l'HTML, incompatibile con il Partial Prerendering, quindi va rivista ADR-0004.
 - README finale con screenshot, link alla produzione e il racconto della protezione SSRF.
 
 ## Dopo la v1
