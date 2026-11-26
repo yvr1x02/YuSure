@@ -92,6 +92,52 @@ describe("ScanReport", () => {
     expect(text).not.toContain("versione precedente dei controlli");
   });
 
+  it("shows SEO and accessibility as sections of their own, each with its score", () => {
+    const full = render({
+      ...report,
+      results: [
+        ...report.results,
+        { id: "title", outcome: "ok", found: [] },
+        { id: "viewport", outcome: "problem", found: [] },
+        { id: "imageAlt", outcome: "warning", found: [] },
+      ],
+    });
+    const sections = [...full.matchAll(/<h2 id="section-(\w+)"[^>]*>([^<]+)</g)].map((m) => [m[1], m[2]]);
+    expect(sections).toEqual([
+      ["security", "Sicurezza"],
+      ["seo", "SEO"],
+      ["accessibility", "Accessibilità"],
+    ]);
+    const seo = full.slice(full.indexOf('id="section-seo"'), full.indexOf('id="section-accessibility"'));
+    expect(seo).toContain('id="check-viewport"');
+    // Of the SEO checks in the report, title 18 ok and viewport 18 a problem: 18 out of 36.
+    expect(seo).toContain('font-extrabold">50</span>');
+  });
+
+  it("shows only the sections a report has: one of catalog v1 has security alone", () => {
+    expect(html).not.toContain('id="section-seo"');
+    expect(html).not.toContain('id="section-accessibility"');
+  });
+
+  it("orders the urgent problems by their weight in the whole report", () => {
+    // noindex: 20 × SEO 25 = 500; httpRedirect: 12 × security 35 = 420; formLabels: 35 × accessibility 15 = 525.
+    const urgent = render({
+      ...report,
+      results: [
+        { id: "httpRedirect", outcome: "problem", found: [] },
+        { id: "noindex", outcome: "problem", found: [] },
+        { id: "formLabels", outcome: "problem", found: [] },
+      ],
+    });
+    const summary = urgent.slice(urgent.indexOf("Da sistemare subito"), urgent.indexOf('id="section-'));
+    expect([...summary.matchAll(/href="#check-(\w+)"/g)].map((m) => m[1])).toEqual(["formLabels", "noindex", "httpRedirect"]);
+  });
+
+  it("explains a variant with its own texts", () => {
+    const short = render({ ...report, results: [{ id: "title", outcome: "warning", variant: "short", values: { length: "5" }, found: [] }] });
+    expect(short).toContain("Il titolo della pagina è molto corto (5 caratteri)");
+  });
+
   it("keeps technical details in a native disclosure", () => {
     expect(html.match(/<details/g)).toHaveLength(4);
     expect(text).toContain("http://esempio.it/menu → 200");

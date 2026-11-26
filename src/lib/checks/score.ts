@@ -53,11 +53,16 @@ export function totalScore(sections: Partial<Record<Section, Score>>): Score | u
   return { value, partial };
 }
 
-/** The scores saved with a report, at scan time (ADR-0003). Only security until M4. */
-export type Scores = { security: Score | Unscored };
+/** The scores saved with a report, at scan time (ADR-0003). Reports of catalog v1 have security only. */
+export type Scores = { security: Score | Unscored; seo?: Score | Unscored; accessibility?: Score | Unscored };
 
+/** Performance and the total arrive with PageSpeed (M5). */
 export function scoresOf(results: CheckResult[]): Scores {
-  return { security: sectionScore(results, "security") };
+  return {
+    security: sectionScore(results, "security"),
+    seo: sectionScore(results, "seo"),
+    accessibility: sectionScore(results, "accessibility"),
+  };
 }
 
 export function verdict(score: number): Verdict {
