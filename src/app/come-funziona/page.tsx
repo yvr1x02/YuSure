@@ -118,7 +118,7 @@ export default function HowItWorks() {
           <li>Niente account, niente cookie di profilazione, niente statistiche con dati personali.</li>
         </ul>
         <p>
-          Se lo stesso sito è stato analizzato nelle ultime 24 ore, YuSure mostra quel report
+          Se la stessa pagina è stata analizzata nelle ultime 24 ore, YuSure mostra quel report
           invece di rifarlo.
         </p>
       </section>

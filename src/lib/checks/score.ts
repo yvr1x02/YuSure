@@ -53,6 +53,13 @@ export function totalScore(sections: Partial<Record<Section, Score>>): Score | u
   return { value, partial };
 }
 
+/** The scores saved with a report, at scan time (ADR-0003). Only security until M4. */
+export type Scores = { security: Score | Unscored };
+
+export function scoresOf(results: CheckResult[]): Scores {
+  return { security: sectionScore(results, "security") };
+}
+
 export function verdict(score: number): Verdict {
   if (score >= 90) return "good";
   return score >= 60 ? "improve" : "critical";
