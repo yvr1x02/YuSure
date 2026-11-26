@@ -1,5 +1,7 @@
 import type { SafeRequestErrorCode } from "@/lib/safe-request";
 
+import type { Verdict } from "./score";
+
 /*
  * Every text of the report lives here (CLAUDE.md, "Linguaggio del report").
  * headline: what happened, for the site owner. explanation: why it matters.
@@ -338,14 +340,33 @@ export const ERROR_MESSAGES: Record<ReasonCode | "empty_address" | "scan_disable
   no_https: "Il sito non risponde in https, quindi non c'è un certificato da controllare.",
   certificate_expired: "Il certificato è già scaduto: lo segnala il controllo sul certificato di sicurezza.",
   read_over_http:
-    "La pagina si è potuta leggere solo senza https, e questo controllo vale solo per la versione protetta. La mancanza di https è già segnalata sopra.",
+    "La pagina si è potuta leggere solo senza https, e questo controllo ha senso solo per la versione protetta del sito.",
   page_unreachable: "Non è stato possibile leggere la pagina, né in https né in http.",
   not_html: "L'indirizzo non porta a una pagina web (HTML), quindi non ci sono contenuti da controllare.",
 };
 
+export const SECTION_LABELS: Record<Section, string> = {
+  security: "Sicurezza",
+  performance: "Performance",
+  seo: "SEO",
+  accessibility: "Accessibilità",
+};
+
+export const VERDICT_LABELS: Record<Verdict, string> = {
+  good: "Buono",
+  improve: "Da migliorare",
+  critical: "Critico",
+};
+
+export const SCORE_TEXTS = {
+  urgent: "Da sistemare subito",
+  partial: "Punteggio parziale: i controlli non verificati non sono contati.",
+  unavailable: "Punteggio non disponibile: nessun controllo di questa sezione si è potuto eseguire.",
+};
+
 /** Shown above the results when the page checks used the http version (SPEC, regole comuni). */
 export const READ_OVER_HTTP_NOTE =
-  "La versione https della pagina non si è potuta leggere: i controlli sulla pagina (header, cookie e contenuti) usano la versione http.";
+  "I controlli sulla pagina (header, cookie e contenuti) usano la versione http, perché quella https non si è potuta leggere o rimanda a http.";
 
 /** Fills {name} placeholders; a missing value is left visible rather than hidden. */
 export function fillText(text: string, values: Record<string, string> = {}): string {
