@@ -6,7 +6,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - ogni nuova pagina entra nel controllo di accessibilità con axe (WCAG 2.2 AA) nello stesso commit che la aggiunge;
 - ogni controllo nuovo ha test unitari sui casi ok, attenzione, problema e non verificato.
 
-**Milestone attiva:** M2
+**Milestone attiva:** M3
 
 ## M0 — Fondamenta (completata il 2026-11-25)
 
@@ -34,15 +34,22 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 - Scansioni attive solo dove `SCAN_ENABLED` è `true`: Preview sì, Production no fino a M3.
 
 **Da verificare dopo il merge di M1:**
-- In produzione la Home mostra "YuSure è in costruzione" senza il form, e la Server Action rifiuta le richieste: `SCAN_ENABLED` non è impostata per Production.
+- In produzione la Home mostra "YuSure è in costruzione" senza il form, e la Server Action rifiuta le richieste: `SCAN_ENABLED` non è impostata per Production. *Verificato il 2026-11-26: il deploy di produzione è quello della merge della PR #5 (`494d09b`); `https://yusure.vercel.app/` ha la frase "in costruzione" e nessun `<form>` né `<input>`; una chiamata diretta alla Server Action `scan` (ID letto dal JavaScript pubblico) con `example.com` risponde `{"status":"error","message":"YuSure è in costruzione: le scansioni arrivano a breve."}`.*
 - In anteprima, con `SCAN_ENABLED=true` per Preview, una scansione vera da Vercel (fra1) completa i quattro controlli.
 
-## M2 — Sicurezza completa e punteggio
+## M2 — Sicurezza completa e punteggio (completata il 2026-11-26)
 
 - Header di sicurezza, cookie, versioni esposte, contenuto misto (con cheerio).
 - Calcolo dei punteggi (SPEC, "Punteggio") in funzioni pure testate.
 - Report completo per la sezione Sicurezza: riepilogo "Da sistemare subito", dettagli tecnici apribili.
 - I controlli sulla pagina usano la versione `http://` quando `https` non risponde o il certificato non è valido, con una nota nel report (SPEC, regole comuni).
+- GitHub Action che a ogni push e a ogni PR esegue lint, typecheck, test unitari ed e2e.
+- Istruzioni per impostare la protezione di `main` (si entra solo con una PR e i controlli verdi); la imposta l'utente su GitHub.
+
+**Da verificare dopo il merge di M2:**
+- La CI parte sul push in `main` della merge e finisce verde.
+- Protezione di `main` impostata seguendo il README: un `git push` diretto su `main` viene rifiutato.
+- In produzione la Home resta "in costruzione" e la Server Action rifiuta le richieste (`SCAN_ENABLED` spenta fino a M3).
 
 ## M3 — Salvataggio, link e limiti
 
@@ -77,6 +84,7 @@ Si lavora su **una milestone alla volta**: quella segnata come attiva. Ogni mile
 
 - Accessibilità, telefono a 320px, stati vuoti e di errore.
 - Prova su una decina di siti reali di tipo diverso, con i risultati confrontati a mano.
+- Su alcuni di quei siti, confronto dei risultati con securityheaders.com e PageSpeed Insights, con le differenze spiegate.
 - README finale con screenshot, link alla produzione e il racconto della protezione SSRF.
 
 ## Dopo la v1

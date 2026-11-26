@@ -1,7 +1,20 @@
 import { SafeRequestError, type CertificateInfo, type SafeRequestOptions, type SafeResponse } from "@/lib/safe-request";
 
+import type { CheckId } from "./catalog";
 import { evaluateCertificate } from "./certificate";
+import { evaluateCookies } from "./cookies";
+import {
+  evaluateClickjacking,
+  evaluateCsp,
+  evaluateExposedVersions,
+  evaluateHsts,
+  evaluateNosniff,
+  evaluatePermissionsPolicy,
+  evaluateReferrerPolicy,
+} from "./headers";
 import { evaluateHttpRedirect, evaluateHttps, traceHttpRedirects } from "./https";
+import { evaluateMixedContent } from "./mixed-content";
+import { choosePage, type Page } from "./page";
 import { asError, type CheckResult } from "./result";
 
 export const SCAN_TIMEOUT_MS = 30_000;
@@ -12,7 +25,26 @@ export type ScanIO = {
   inspectCertificate: (url: URL, options?: Pick<SafeRequestOptions, "signal">) => Promise<CertificateInfo>;
 };
 
-export type ScanReport = { url: string; scannedAt: string; results: CheckResult[] };
+export type ScanReport = {
+  url: string;
+  scannedAt: string;
+  /** The address the page checks read; set only when it is the http fallback (SPEC, regole comuni). */
+  readOverHttp?: string;
+  results: CheckResult[];
+};
+
+// Checks on the page itself, in catalog order.
+const PAGE_CHECKS: [CheckId, (page: Page) => CheckResult][] = [
+  ["mixedContent", evaluateMixedContent],
+  ["hsts", evaluateHsts],
+  ["csp", evaluateCsp],
+  ["clickjacking", evaluateClickjacking],
+  ["nosniff", evaluateNosniff],
+  ["referrerPolicy", evaluateReferrerPolicy],
+  ["permissionsPolicy", evaluatePermissionsPolicy],
+  ["cookies", evaluateCookies],
+  ["exposedVersions", evaluateExposedVersions],
+];
 
 export type ScanOutcome = { ok: true; report: ScanReport } | { ok: false; reason: "not_public" | "dns_failed" };
 
@@ -45,12 +77,23 @@ export async function runScan(
     if (error instanceof SafeRequestError) logFailure(target, check, error);
   }
 
+  const source = choosePage(page, httpTrace);
+  const pageResults = PAGE_CHECKS.map(([id, evaluate]): CheckResult =>
+    "reason" in source ? { id, outcome: "unverified", reason: source.reason, found: source.found } : evaluate(source),
+  );
+
   return {
     ok: true,
     report: {
       url: target.href,
       scannedAt: now.toISOString(),
-      results: [evaluateHttps(page), evaluateHttpRedirect(httpTrace), ...evaluateCertificate(certificate, now)],
+      ...("response" in source && source.overHttp && { readOverHttp: source.response.url.href }),
+      results: [
+        evaluateHttps(page),
+        evaluateHttpRedirect(httpTrace),
+        ...evaluateCertificate(certificate, now),
+        ...pageResults,
+      ],
     },
   };
 }

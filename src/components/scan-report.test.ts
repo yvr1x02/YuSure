@@ -39,6 +39,46 @@ describe("ScanReport", () => {
     expect(text).toContain("Il sito non ha risposto entro 10 secondi.");
   });
 
+  it("shows the security score and its verdict, partial when a check could not run", () => {
+    // https 25 ok, httpRedirect 12 problem, expiry 4 ok: 29 out of 41.
+    expect(text).toContain("71 su 100, Da migliorare");
+    expect(text).toContain("Punteggio parziale");
+  });
+
+  it("lists the problems first, by weight, linking to each result", () => {
+    const withProblems = renderToStaticMarkup(
+      createElement(ScanReport, {
+        report: {
+          ...report,
+          results: [
+            { id: "httpRedirect", outcome: "problem", found: [] },
+            { id: "mixedContent", outcome: "warning", found: [] },
+            { id: "https", outcome: "problem", found: [] },
+          ],
+        },
+      }),
+    );
+    const summary = withProblems.slice(withProblems.indexOf("Da sistemare subito"), withProblems.indexOf("Sicurezza"));
+    expect([...summary.matchAll(/href="#check-(\w+)"/g)].map((m) => m[1])).toEqual(["https", "httpRedirect"]);
+    expect(withProblems).toContain('id="check-https"');
+  });
+
+  it("has no summary without problems, and no score without checks that ran", () => {
+    const empty = renderToStaticMarkup(
+      createElement(ScanReport, {
+        report: { ...report, results: [{ id: "https", outcome: "unverified", reason: "timeout", found: [] }] },
+      }),
+    );
+    expect(empty).not.toContain("Da sistemare subito");
+    expect(empty).toContain("Punteggio non disponibile");
+  });
+
+  it("says when the page checks read the http version", () => {
+    const overHttp = renderToStaticMarkup(createElement(ScanReport, { report: { ...report, readOverHttp: "http://esempio.it/menu" } }));
+    expect(overHttp).toContain("usano la versione http");
+    expect(text).not.toContain("usano la versione http");
+  });
+
   it("keeps technical details in a native disclosure", () => {
     expect(html.match(/<details/g)).toHaveLength(4);
     expect(text).toContain("http://esempio.it/menu → 200");

@@ -32,7 +32,12 @@ export function evaluateHttps(result: SafeResponse | SafeRequestError): CheckRes
 }
 
 export type HttpHop = { url: string; status: number; location?: string };
-export type HttpTrace = { hops: HttpHop[]; error?: SafeRequestError };
+export type HttpTrace = {
+  hops: HttpHop[];
+  error?: SafeRequestError;
+  /** The last http response when it is a page, not a redirect: the fallback for the page checks. */
+  page?: SafeResponse;
+};
 
 /** Follows redirects one by one while they stay on http, at most 5 (SPEC, "Da http:// si arriva a https://"). */
 export async function traceHttpRedirects(target: URL, request: Request, signal?: AbortSignal): Promise<HttpTrace> {
@@ -57,7 +62,8 @@ export async function traceHttpRedirects(target: URL, request: Request, signal?:
       }
     }
     hops.push({ url: url.href, status: response.status, location: next?.href });
-    if (next?.protocol !== "http:") return { hops };
+    if (!next) return { hops, page: response };
+    if (next.protocol !== "http:") return { hops };
     url = next;
   }
   return { hops, error: new SafeRequestError("too_many_redirects", `more than ${MAX_REDIRECTS} redirects on http`) };
