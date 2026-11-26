@@ -106,7 +106,8 @@ export function ScanReport({
 
 function textsOf(result: CheckResult) {
   const check: CheckDefinition = CHECKS[result.id];
-  return result.outcome === "unverified" ? undefined : check.texts[result.outcome];
+  if (result.outcome === "unverified") return undefined;
+  return (result.variant && check.variants?.[result.variant]) || check.texts[result.outcome];
 }
 
 function headlineOf(result: CheckResult): string {

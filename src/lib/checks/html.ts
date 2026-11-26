@@ -27,3 +27,24 @@ export function metaCsp($: CheerioAPI): string[] {
     .get()
     .filter(Boolean);
 }
+
+// Containers that client-side frameworks fill in the browser (React, Vue, Next, Nuxt, Gatsby, SvelteKit, Angular).
+const APP_ROOTS = "#root, #app, #__next, #__nuxt, #___gatsby, #svelte, app-root";
+/** Below this, a page with an empty app container has no content of its own (tests in html.test.ts). */
+export const CLIENT_RENDERED_MAX_TEXT = 200;
+
+/** The text a visitor reads in the body, without scripts, styles, <noscript> and <template>. */
+export function visibleText($: CheerioAPI): string {
+  const body = $("body").clone();
+  body.find("script, style, noscript, template").remove();
+  return body.text().replace(/\s+/g, " ").trim();
+}
+
+/**
+ * A page built in the browser: an empty app container, scripts to fill it and almost no
+ * text of its own. Its content cannot be checked from the HTML; its <head> still can.
+ */
+export function isClientRendered($: CheerioAPI): boolean {
+  const emptyRoot = $(APP_ROOTS).filter((_, el) => $(el).text().trim() === "").length > 0;
+  return emptyRoot && $("script").length > 0 && visibleText($).length < CLIENT_RENDERED_MAX_TEXT;
+}

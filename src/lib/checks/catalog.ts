@@ -22,6 +22,8 @@ export type CheckDefinition = {
   /** Points lost on a problem; a warning loses half (score.ts). Security weights add up to 100. */
   weight: number;
   texts: Partial<Record<Exclude<Outcome, "unverified">, Texts>>;
+  /** Texts for one cause of an outcome (CheckResult.variant), e.g. a title missing or too long. */
+  variants?: Record<string, Texts>;
   /** "Dettagli tecnici": what a passing site shows. */
   expected: string;
   docs: string;
@@ -321,7 +323,8 @@ export type ReasonCode =
   | "certificate_expired"
   | "read_over_http"
   | "page_unreachable"
-  | "not_html";
+  | "not_html"
+  | "client_rendered";
 
 /** Shown in the form when the scan cannot start, and as the reason of "non verificato". */
 export const ERROR_MESSAGES: Record<
@@ -353,6 +356,7 @@ export const ERROR_MESSAGES: Record<
     "La pagina si è potuta leggere solo senza https, e questo controllo ha senso solo per la versione protetta del sito.",
   page_unreachable: "Non è stato possibile leggere la pagina, né in https né in http.",
   not_html: "L'indirizzo non porta a una pagina web (HTML), quindi non ci sono contenuti da controllare.",
+  client_rendered: "La pagina si costruisce nel browser: YuSure non può leggerne il contenuto.",
 };
 
 export const SECTION_LABELS: Record<Section, string> = {

@@ -1,7 +1,6 @@
 import type { IncomingHttpHeaders } from "node:http";
 
-import { parseHtml } from "./html";
-import type { Page } from "./page";
+import { readPage, type Page } from "./page";
 
 /** A page as runScan would hand it to the checks, for tests only. */
 export function testPage(
@@ -17,5 +16,5 @@ export function testPage(
     address: "8.8.8.8",
     redirects: [],
   };
-  return { response, overHttp: response.url.protocol === "http:", html: parseHtml(response) };
+  return readPage(response);
 }

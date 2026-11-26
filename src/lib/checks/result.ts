@@ -7,6 +7,8 @@ export type CheckResult = {
   outcome: Outcome;
   /** Values for the {name} placeholders of the texts. */
   values?: Record<string, string>;
+  /** Which of the check's variants explains this outcome, when one outcome has several causes. */
+  variant?: string;
   /** Why the check could not run, for "non verificato". */
   reason?: ReasonCode;
   /** "Dettagli tecnici": what was read, one line each. */
