@@ -10,8 +10,10 @@ const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 /**
  * "Il sito risponde in https": any response counts. A rejected certificate still means
  * the site answers in https; its validity is judged only by the certificate check.
+ * A connection closed before any response counts as no https when http on the same
+ * host answers (decided in M3); otherwise the site may simply be down.
  */
-export function evaluateHttps(result: SafeResponse | SafeRequestError): CheckResult {
+export function evaluateHttps(result: SafeResponse | SafeRequestError, httpTrace: HttpTrace): CheckResult {
   const id = "https";
   if (!(result instanceof SafeRequestError)) {
     const chain = [...result.redirects, result.url].map(String).join(" → ");
@@ -26,6 +28,11 @@ export function evaluateHttps(result: SafeResponse | SafeRequestError): CheckRes
       return { id, outcome: "ok", found };
     case "connection_refused":
       return { id, outcome: "problem", found };
+    case "connection_reset": {
+      const httpAnswer = httpTrace.hops[0];
+      if (!httpAnswer) return unverified(id, result);
+      return { id, outcome: "problem", found: [...found, `${httpAnswer.url} → ${httpAnswer.status}`] };
+    }
     default:
       return unverified(id, result);
   }
