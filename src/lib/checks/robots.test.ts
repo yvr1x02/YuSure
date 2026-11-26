@@ -36,6 +36,15 @@ describe("parseRobots", () => {
     expect(robots.sitemaps).toEqual(["https://esempio.it/a.xml", "https://esempio.it/b.xml"]);
   });
 
+  it("keeps a User-agent run open across Sitemap lines, as Google does", () => {
+    const robots = parseRobots("User-agent: bingbot\nSitemap: https://esempio.it/s.xml\nUser-agent: *\nDisallow: /\n");
+    expect(robots).toMatchObject({ agent: "*", rules: [{ allow: false, path: "/" }] });
+  });
+
+  it.each(["Googlebot/2.1", "googlebot*", "GOOGLEBOT"])("reads %s as googlebot", (name) => {
+    expect(parseRobots(`User-agent: *\nDisallow: /\n\nUser-agent: ${name}\nDisallow:\n`).agent).toBe("googlebot");
+  });
+
   it("finds no group for Google when only others are named", () => {
     expect(parseRobots("User-agent: bingbot\nDisallow: /\n")).toMatchObject({ agent: undefined, rules: [] });
   });
@@ -70,6 +79,10 @@ describe("evaluateRobots", () => {
 
   it.each([404, 403, 410])("warns that it is missing on %i", (status) => {
     expect(evaluateRobots(answer(status), robotsAt)).toMatchObject({ outcome: "warning", variant: "missing" });
+  });
+
+  it("is unverified on 429: the site may be slowing YuSureBot down", () => {
+    expect(evaluateRobots(answer(429), robotsAt)).toMatchObject({ outcome: "unverified", reason: "rate_limited" });
   });
 
   it.each([500, 503])("is a problem on %i: Google stops crawling", (status) => {

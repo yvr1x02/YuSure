@@ -431,7 +431,7 @@ export const CHECKS = {
       serverError: {
         headline: "Il file robots.txt risponde con un errore del server",
         explanation:
-          "Quando robots.txt dà un errore del server, Google smette di visitare il sito finché non torna a rispondere. Va sistemato in fretta, di solito dal fornitore dell'hosting.",
+          "Con questo errore Google smette di visitare il sito per 12 ore, poi per un mese usa l'ultima copia del file che conosce. Va sistemato in fretta, di solito dal fornitore dell'hosting.",
       },
     },
     expected: "robots.txt che risponde 200 e non blocca tutto per Googlebot (Disallow: / senza Allow); se manca, Google visita tutto",
@@ -667,7 +667,8 @@ export type ReasonCode =
   | "read_over_http"
   | "page_unreachable"
   | "not_html"
-  | "client_rendered";
+  | "client_rendered"
+  | "rate_limited";
 
 /** Shown in the form when the scan cannot start, and as the reason of "non verificato". */
 export const ERROR_MESSAGES: Record<
@@ -700,6 +701,7 @@ export const ERROR_MESSAGES: Record<
   page_unreachable: "Non è stato possibile leggere la pagina, né in https né in http.",
   not_html: "L'indirizzo non porta a una pagina web (HTML), quindi non ci sono contenuti da controllare.",
   client_rendered: "La pagina si costruisce nel browser: YuSure non può leggerne il contenuto.",
+  rate_limited: "Il sito ha chiesto a YuSure di rallentare (risposta 429), quindi il file non si è potuto leggere.",
 };
 
 export const SECTION_LABELS: Record<Section, string> = {

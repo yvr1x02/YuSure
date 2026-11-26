@@ -25,13 +25,15 @@ export function parseRobots(text: string): Robots {
     if (key === "user-agent") {
       // Consecutive User-agent lines share the rules that follow them.
       if (!agentRun) groups.push({ agents: [], rules: [] });
-      groups.at(-1)!.agents.push(value.toLowerCase());
+      groups.at(-1)!.agents.push(agentName(value));
       agentRun = true;
-      continue;
+    } else if (key === "allow" || key === "disallow") {
+      // Only a rule ends a run of User-agent lines: for Google, Sitemap and unknown lines do not.
+      agentRun = false;
+      groups.at(-1)?.rules.push({ allow: key === "allow", path: value });
+    } else if (key === "sitemap" && value) {
+      sitemaps.push(value);
     }
-    agentRun = false;
-    if ((key === "allow" || key === "disallow") && groups.length > 0) groups.at(-1)!.rules.push({ allow: key === "allow", path: value });
-    else if (key === "sitemap" && value) sitemaps.push(value);
   }
 
   for (const agent of ["googlebot", "*"] as const) {
@@ -39,6 +41,12 @@ export function parseRobots(text: string): Robots {
     if (matching.length > 0) return { agent, rules: matching.flatMap((g) => g.rules), sitemaps };
   }
   return { agent: undefined, rules: [], sitemaps };
+}
+
+/** "Googlebot/1.2" and "googlebot*" both name googlebot, as for Google; "*" stays "*". */
+function agentName(value: string): string {
+  const name = value.toLowerCase().split("/")[0].trim();
+  return name === "*" ? name : name.replace(/\*+$/, "");
 }
 
 /** Disallow: / (or /*) with no Allow to open anything back up (decided in M4). */
@@ -50,7 +58,10 @@ export function evaluateRobots(result: SafeResponse | SafeRequestError, url: URL
   const id = "robotsTxt";
   if (result instanceof SafeRequestError) return unverified(id, result);
   const status = `${url.href}: ${result.status}`;
-  // Google stops crawling while robots.txt answers 5xx; 4xx means "no rules", like a missing file.
+  // 429 may be the site slowing YuSureBot down, not a fault of the site: nothing to judge.
+  if (result.status === 429) return { id, outcome: "unverified", reason: "rate_limited", found: [status] };
+  // On 5xx Google stops crawling for 12 hours, then relies on an old copy for up to 30 days;
+  // any other 4xx means "no rules", like a missing file (Google's robots.txt specification).
   if (result.status >= 500) return { id, outcome: "problem", variant: "serverError", found: [status] };
   if (result.status >= 400) return { id, outcome: "warning", variant: "missing", found: [status] };
 
