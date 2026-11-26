@@ -59,9 +59,11 @@ Se lo stesso indirizzo è stato scansionato nelle ultime 24 ore, si apre quel re
 
 - L'IP si salva solo come **hash con sale** (HMAC con un segreto del server) nella tabella dei limiti, mai nella tabella dei report.
 - Il segreto è `IP_HASH_SECRET` ed è obbligatorio: se manca, le scansioni si rifiutano invece di salvare un hash senza segreto (deciso il 2026-11-26, M3).
+- **L'IP viene da `x-real-ip`**, letto con `ipAddress()` di `@vercel/functions`. La documentazione di Vercel dice che `x-real-ip` è "identical to the `x-forwarded-for` header" e che `x-forwarded-for` viene sovrascritto "to prevent IP spoofing", ma non lo dice esplicitamente per `x-real-ip` ([Request headers](https://vercel.com/docs/headers/request-headers)). **Provato il 2026-11-26** nell'anteprima di `m3`: tre scansioni con `x-real-ip` e `x-forwarded-for` falsi e diversi a ogni richiesta (`198.51.100.1`–`3`) sono finite su un solo hash. Vercel sovrascrive entrambi gli header, e il limite per IP non si aggira mandando un IP falso. Fuori da Vercel (`next dev`, e2e) tutte le richieste contano come un solo client.
 - Le righe dei limiti scadute si cancellano **a ogni scansione**; un **cron giornaliero** di Vercel, protetto con `CRON_SECRET`, fa da rete di sicurezza quando non arrivano scansioni.
 - Promessa pubblica (pagina "Come funziona"): l'hash dell'IP **si cancella entro 48 ore**. Con la soglia di 2 ore il caso peggiore è circa 27 ore (2 di vita più fino a 24 ore e 59 minuti tra due passaggi del cron), dentro la promessa e quindi dentro il vincolo per M3 descritto sotto.
 - **I report non si indicizzano** (deciso il 2026-11-26, M3): `/report/[id]` manda `noindex` sia nel meta `robots` sia nell'header `X-Robots-Tag`.
+- **Un report inesistente risponde 200, non 404.** La pagina arriva in streaming (il report si legge dentro `<Suspense>`, ADR-0004), quindi lo stato è già partito quando `notFound()` scopre che il report non c'è. La pagina mostra "Report non trovato", e Next aggiunge comunque il meta `noindex`; anche l'header `X-Robots-Tag: noindex` c'è. È il comportamento documentato da Next (`not-found.md`: "After streaming starts, the status code remains 200"). Verificato in anteprima il 2026-11-26.
 - Nessun cookie di profilazione, nessuna analytics che salvi dati personali.
 
 ## Alternative considerate
